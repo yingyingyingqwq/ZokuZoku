@@ -1,3 +1,5 @@
+<img align="left" width="80" height="80" src="assets/icon.png">
+
 # ZokuZoku
 ZokuZoku is a Visual Studio Code extension which acts as the main translation tool for Hachimi. It provides a number of custom editors that are specialized for editing the various JSON dict formats that Hachimi uses, allowing translators to work on translations without having to edit the JSON file directly.
 
