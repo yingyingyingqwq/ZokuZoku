@@ -1,0 +1,21 @@
+{
+  "name": "criCodecs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile": "cmake-js compile"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "cmake-js": "^7.3.0",
+    "node-addon-api": "^8.0.0"
+  },
+  "binary": {
+    "napi_versions": [
+      9
+    ]
+  }
+}
