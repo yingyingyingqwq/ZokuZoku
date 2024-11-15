@@ -255,12 +255,15 @@
 
                 if (!src.length || !dest.length) { return; }
 
+                const res = await vscode.showInputBox(
+                    "pasteSlotCount", 
+                    "How many text slots do you want to paste? (leave empty to paste all)"
+                );
+                if (res == null) { return; }
+
                 const maxSlots = Math.max(
                     0,
-                    +(await vscode.showInputBox(
-                        "pasteSlotCount", 
-                        "How many text slots do you want to paste? (leave empty to paste all)"
-                    ))!
+                    res.length ? +res : NaN
                 );
 
                 let i = 0;
