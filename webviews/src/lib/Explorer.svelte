@@ -27,6 +27,7 @@
     };
     let searchNodes: ITreeNode[] = [];
     let searchQuery = "";
+    let hideExists = false;
 
     function onMessage(e: MessageEvent<ControllerMessage>) {
         const message = e.data;
@@ -235,7 +236,8 @@
         }
     }
 
-    const actions: IPanelAction[] = [
+    let actions: IPanelAction[];
+    $: actions = [
         {
             icon: "copy",
             tooltip: "Copy",
@@ -333,6 +335,11 @@
                 }
                 $selectedNodes = {};
             }
+        },
+        {
+            icon: hideExists ? "eye" : "eye-closed",
+            tooltip: hideExists ? "Show translated entries" : "Hide translated entries",
+            onClick: () => hideExists = !hideExists
         }
     ];
 </script>
@@ -361,7 +368,7 @@
     <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
     <div class="tree-view" style={searchQuery ? "display: none;" : null} tabindex="0" bind:this={treeView} on:scroll={onScroll} on:mousemove={onMouseMove} on:mouseup={onMouseUp} on:keydown={onKeyDown}>
         {#each nodes as node}
-            <TreeNode {node} siblings={nodes} />
+            <TreeNode {node} siblings={nodes} {hideExists} />
         {/each}
     </div>
     {#if searchQuery}
@@ -370,7 +377,7 @@
                 <div class="searching-label">Searching...</div>
             {/if}
             {#each searchNodes as node}
-                <TreeNode {node} openAll />
+                <TreeNode {node} openAll {hideExists} />
             {/each}
         </div>
     {/if}

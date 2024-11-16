@@ -8,6 +8,7 @@
     export let parentPath: TreeNodeId[] = [];
     export let siblings: ITreeNode[] = [];
     export let openAll = false;
+    export let hideExists = false;
 
     const defaultNodeState = {
         open: false,
@@ -155,49 +156,51 @@
 
 <svelte:window on:message={onMessage} />
 
-<IntersectionObserver {element} bind:intersecting={isInView}>
-    <div bind:this={element}
-        class="tree-node" class:focus class:noContent
-        class:selected={pathStr in $selectedNodes}
-        class:copying={pathStr in $copyingNodes}
-        title={pathStr} on:click={onClick} on:click
-        on:mousemove={onMouseMove}
-    >
-        {#if selectionIndex !== null}
-            <div class="selection-index">{selectionIndex}</div>
-        {/if}
-        {#each {length: path.length - 1} as _}
-            <div class="indent"></div>
-        {/each}
-        <div class="codicon codicon-{icon}"></div>
-        <div class="node-name">{node.name}</div>
-    </div>
-</IntersectionObserver>
+{#if !hideExists || noContent || node.type != "entry"}
+    <IntersectionObserver {element} bind:intersecting={isInView}>
+        <div bind:this={element}
+            class="tree-node" class:focus class:noContent
+            class:selected={pathStr in $selectedNodes}
+            class:copying={pathStr in $copyingNodes}
+            title={pathStr} on:click={onClick} on:click
+            on:mousemove={onMouseMove}
+        >
+            {#if selectionIndex !== null}
+                <div class="selection-index">{selectionIndex}</div>
+            {/if}
+            {#each {length: path.length - 1} as _}
+                <div class="indent"></div>
+            {/each}
+            <div class="codicon codicon-{icon}"></div>
+            <div class="node-name">{node.name}</div>
+        </div>
+    </IntersectionObserver>
 
-{#if node.type == "category" && open}
-    {#key childrenStart}
-        {#if childrenStart > 0}
-            <svelte:self node={{
-                type: "dummy",
-                id: "__prevEntries",
-                name: `Previous ${maxChildren} entries...`,
-                icon: "arrow-up"
-            }} parentPath={path} on:click={prevEntries} />
-        {/if}
+    {#if node.type == "category" && open}
+        {#key childrenStart}
+            {#if childrenStart > 0}
+                <svelte:self node={{
+                    type: "dummy",
+                    id: "__prevEntries",
+                    name: `Previous ${maxChildren} entries...`,
+                    icon: "arrow-up"
+                }} parentPath={path} on:click={prevEntries} />
+            {/if}
 
-        {#each {length: Math.min(node.children.length - childrenStart, maxChildren)} as _, i}
-            <svelte:self node={node.children[childrenStart + i]} parentPath={path} siblings={node.children} {openAll} />
-        {/each}
+            {#each {length: Math.min(node.children.length - childrenStart, maxChildren)} as _, i}
+                <svelte:self node={node.children[childrenStart + i]} parentPath={path} siblings={node.children} {openAll} {hideExists} />
+            {/each}
 
-        {#if childrenStart + maxChildren < node.children.length}
-            <svelte:self node={{
-                type: "dummy",
-                id: "__nextEntries",
-                name: `Next ${maxChildren} entries...`,
-                icon: "arrow-down"
-            }} parentPath={path} on:click={nextEntries} />
-        {/if}
-    {/key}
+            {#if childrenStart + maxChildren < node.children.length}
+                <svelte:self node={{
+                    type: "dummy",
+                    id: "__nextEntries",
+                    name: `Next ${maxChildren} entries...`,
+                    icon: "arrow-down"
+                }} parentPath={path} on:click={nextEntries} />
+            {/if}
+        {/key}
+    {/if}
 {/if}
 
 <style>
