@@ -6,6 +6,7 @@ import tar from 'tar';
 import { spawn } from "child_process";
 
 import downloader from './core/downloader';
+import { getGameInstallPath } from './core/utils';
 import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
 // Any other module from this package must be imported dynamically,
@@ -134,28 +135,19 @@ async function checkGameDataDir() {
 	}
 }
 
-const DMM5_CONFIG_PATH = path.join(os.homedir(), "AppData", "Roaming", "dmmgameplayer5", "dmmgame.cnf");
 async function checkLocalizeDictDump() {
 	if (config().get("localizeDictDump")) { return; }
 
 	let dumpPath: string | undefined;
-	try {
-		let installPath: string | undefined;
-		let dmmConfig = JSON.parse(await fs.readFile(DMM5_CONFIG_PATH, { encoding: "utf8" }));
-		for (const entry of dmmConfig.contents) {
-			if (entry.productId === "umamusume") {
-				installPath = entry.detail.path;
-				break;
-			}
-		}
-
-		if (installPath) {
+	const installPath = await getGameInstallPath();
+	if (installPath) {
+		try {
 			let tmp = path.join(installPath, "hachimi", "localize_dump.json");
 			await fs.stat(tmp);
 			dumpPath = tmp;
 		}
-	}
-	catch {
+		catch {
+		}
 	}
 
 	if (dumpPath) {

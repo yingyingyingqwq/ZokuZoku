@@ -12,24 +12,25 @@ import MainStoriesTreeDataProvider from './views/mainStoryTreeDataProvider';
 import LyricsTreeDataProvider from './views/lyricsTreeDataProvider';
 import { RaceStoryEditorProvider } from './editors/raceStoryEditor';
 import { StoryEditorProvider } from './editors/storyEditor';
+import { updateHachimiConfig } from './core/utils';
 
 type CommandTree = {[key: string]: ((...args: any[]) => any) | CommandTree};
 
 const COMMANDS: CommandTree = {
     zokuzoku: {
-        enable: () => {
+        enable() {
             config().update("enabled", true, false);
             setActive(true);
         },
 
-        openLocalizeDictEditor: () => {
+        openLocalizeDictEditor() {
             LocalizedDataManager.with(async ldManager => {
                 const document = await ldManager.getPathUriAndOpenTextDocument("{}", "localize_dict", "localize_dict.json");
                 vscode.commands.executeCommand("vscode.openWith", document.uri, LocalizeDictEditorProvider.viewType);
             });
         },
 
-        openLyricsEditor: (songIndex?: string) => {
+        openLyricsEditor(songIndex?: string) {
             if (!songIndex) {
                 vscode.window.showErrorMessage("This command cannot be activated manually.");
                 return;
@@ -43,7 +44,7 @@ const COMMANDS: CommandTree = {
             });
         },
 
-        openMdbEditor: (tableName?: MdbTableName) => {
+        openMdbEditor(tableName?: MdbTableName) {
             if (!tableName) {
                 vscode.window.showErrorMessage("This command cannot be activated manually.");
                 return;
@@ -64,7 +65,7 @@ const COMMANDS: CommandTree = {
             });
         },
 
-        openRaceStoryEditor: (storyId?: string | number) => {
+        openRaceStoryEditor(storyId?: string | number) {
             if (!storyId) {
                 vscode.window.showErrorMessage("This command cannot be activated manually.");
                 return;
@@ -79,7 +80,7 @@ const COMMANDS: CommandTree = {
             });
         },
 
-        openStoryEditor: (type?: "story" | "home", storyId?: string, categoryId?: string, groupId?: string) => {
+        openStoryEditor(type?: "story" | "home", storyId?: string, categoryId?: string, groupId?: string) {
             if (!type || !storyId) {
                 vscode.window.showErrorMessage("This command cannot be activated manually.");
                 return;
@@ -117,8 +118,85 @@ const COMMANDS: CommandTree = {
         },
 
         hachimi: {
-            reloadLocalizedData: () => {
+            reloadLocalizedData() {
                 HachimiIpc.callWithProgress({ type: "ReloadLocalizedData" }).catch(e => {
+                    vscode.window.showErrorMessage("" + e);
+                });
+            },
+            setLocalizedDataDir() {
+                let folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+                if (!folderUri) {
+                    throw new Error("No workspace folder.");
+                }
+                let localizedDataDir = vscode.Uri.joinPath(folderUri, "localized_data").fsPath;
+
+                updateHachimiConfig(config => {
+                    if (config._localized_data_dir || config._translation_repo_index) {
+                        vscode.window.showWarningMessage(
+                            "The localized data dir has already been set by ZokuZoku. Revert it " +
+                            "first if you want to swap it with the current folder."
+                        );
+                        return;
+                    }
+
+                    config._localized_data_dir = config.localized_data_dir ?? null;
+                    config._translation_repo_index = config.translation_repo_index ?? null;
+
+                    config.localized_data_dir = localizedDataDir;
+                    delete config.translation_repo_index;
+
+                    return config;
+                })
+                .then(res => {
+                    if (res) {
+                        vscode.window.showInformationMessage(
+                            `Localized data dir has been set to \"${localizedDataDir}\"`
+                        );
+                    }
+                })
+                .catch(e => {
+                    vscode.window.showErrorMessage("" + e);
+                });
+            },
+            revertLocalizedDataDir() {
+                updateHachimiConfig(config => {
+                    if (!("_localized_data_dir" in config || "_translation_repo_index" in config)) {
+                        vscode.window.showWarningMessage("Nothing to revert in the config file.");
+                        return;
+                    }
+
+                    if ("_localized_data_dir" in config) {
+                        const v = config._localized_data_dir;
+                        if (v === null) {
+                            delete config.localized_data_dir;
+                        }
+                        else {
+                            config.localized_data_dir = v;
+                        }
+                        delete config._localized_data_dir;
+                    }
+
+                    if ("_translation_repo_index" in config) {
+                        const v = config._translation_repo_index;
+                        if (v === null) {
+                            delete config.translation_repo_index;
+                        }
+                        else {
+                            config.translation_repo_index = v;
+                        }
+                        delete config._translation_repo_index;
+                    }
+
+                    return config;
+                })
+                .then(res => {
+                    if (res) {
+                        vscode.window.showInformationMessage(
+                            `Localized data dir has been reverted to \"${res.localized_data_dir}\"`
+                        );
+                    }
+                })
+                .catch(e => {
                     vscode.window.showErrorMessage("" + e);
                 });
             }

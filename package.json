@@ -90,7 +90,7 @@
       },
       {
         "view": "hachimi-controls",
-        "contents": "[Reload localized data](command:zokuzoku.hachimi.reloadLocalizedData)"
+        "contents": "[Reload localized data](command:zokuzoku.hachimi.reloadLocalizedData)\n[Set translation folder](command:zokuzoku.hachimi.setLocalizedDataDir)\n[Revert translation folder](command:zokuzoku.hachimi.revertLocalizedDataDir)"
       }
     ],
     "menus": {
@@ -145,6 +145,14 @@
       {
         "command": "zokuzoku.hachimi.reloadLocalizedData",
         "title": "ZokuZoku: (Hachimi) Reload localized data"
+      },
+      {
+        "command": "zokuzoku.hachimi.setLocalizedDataDir",
+        "title": "ZokuZoku: (Hachimi) Set localized data dir"
+      },
+      {
+        "command": "zokuzoku.hachimi.revertLocalizedDataDir",
+        "title": "ZokuZoku: (Hachimi) Revert localized data dir"
       },
       {
         "command": "zokuzoku.stories.refresh",
