@@ -17,9 +17,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
     static readonly viewType = 'zokuzoku.storyEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new StoryEditorProvider(context);
-		return vscode.window.registerCustomEditorProvider(StoryEditorProvider.viewType, provider);
-	}
+        const provider = new StoryEditorProvider(context);
+        return vscode.window.registerCustomEditorProvider(StoryEditorProvider.viewType, provider);
+    }
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup

@@ -14,9 +14,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
     static readonly viewType = 'zokuzoku.lyricsEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new LyricsEditorProvider(context);
-		return vscode.window.registerCustomEditorProvider(LyricsEditorProvider.viewType, provider);
-	}
+        const provider = new LyricsEditorProvider(context);
+        return vscode.window.registerCustomEditorProvider(LyricsEditorProvider.viewType, provider);
+    }
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup

@@ -45,9 +45,9 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
     static readonly viewType = 'zokuzoku.mdbEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new MdbEditorProvider(context);
-		return vscode.window.registerCustomEditorProvider(MdbEditorProvider.viewType, provider);
-	}
+        const provider = new MdbEditorProvider(context);
+        return vscode.window.registerCustomEditorProvider(MdbEditorProvider.viewType, provider);
+    }
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         const tableName = this.getTableName(document.uri);

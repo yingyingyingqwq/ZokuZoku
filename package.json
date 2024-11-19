@@ -98,22 +98,22 @@
         {
           "command": "zokuzoku.stories.refresh",
           "when": "view == stories",
-					"group": "navigation"
+          "group": "navigation"
         },
         {
           "command": "zokuzoku.homeStories.refresh",
           "when": "view == home-stories",
-					"group": "navigation"
+          "group": "navigation"
         },
         {
           "command": "zokuzoku.mainStories.refresh",
           "when": "view == main-stories",
-					"group": "navigation"
+          "group": "navigation"
         },
         {
           "command": "zokuzoku.lyrics.refresh",
           "when": "view == lyrics",
-					"group": "navigation"
+          "group": "navigation"
         }
       ]
     },

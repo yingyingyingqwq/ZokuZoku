@@ -13,9 +13,9 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
     static readonly viewType = 'zokuzoku.raceStoryEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new RaceStoryEditorProvider(context);
-		return vscode.window.registerCustomEditorProvider(RaceStoryEditorProvider.viewType, provider);
-	}
+        const provider = new RaceStoryEditorProvider(context);
+        return vscode.window.registerCustomEditorProvider(RaceStoryEditorProvider.viewType, provider);
+    }
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup

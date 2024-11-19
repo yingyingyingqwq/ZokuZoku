@@ -85,16 +85,16 @@ export async function getGameInstallPath(): Promise<string | undefined> {
     }
 
     try {
-		let dmmConfig = JSON.parse(await fs.readFile(DMM5_CONFIG_PATH, { encoding: "utf8" }));
-		for (const entry of dmmConfig.contents) {
-			if (entry.productId === "umamusume") {
+        let dmmConfig = JSON.parse(await fs.readFile(DMM5_CONFIG_PATH, { encoding: "utf8" }));
+        for (const entry of dmmConfig.contents) {
+            if (entry.productId === "umamusume") {
                 cachedInstallPath = entry.detail.path;
-				return cachedInstallPath;
-			}
-		}
-	}
-	catch {
-	}
+                return cachedInstallPath;
+            }
+        }
+    }
+    catch {
+    }
 }
 
 export async function updateHachimiConfig(callback: (config: any) => any) {

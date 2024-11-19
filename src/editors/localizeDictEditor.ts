@@ -11,9 +11,9 @@ export class LocalizeDictEditorProvider extends EditorBase implements vscode.Cus
     static readonly viewType = 'zokuzoku.localizeDictEditor';
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new LocalizeDictEditorProvider(context);
-		return vscode.window.registerCustomEditorProvider(LocalizeDictEditorProvider.viewType, provider);
-	}
+        const provider = new LocalizeDictEditorProvider(context);
+        return vscode.window.registerCustomEditorProvider(LocalizeDictEditorProvider.viewType, provider);
+    }
     
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup

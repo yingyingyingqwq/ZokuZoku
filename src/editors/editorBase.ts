@@ -89,7 +89,7 @@ export class EditorBase {
 
     dispose() {
         while (this.disposables.length) {
-			this.disposables.pop()?.dispose();
-		}
+            this.disposables.pop()?.dispose();
+        }
     }
 }

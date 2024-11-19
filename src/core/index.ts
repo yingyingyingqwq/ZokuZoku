@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { LocalizedDataManager } from './localizedDataManager';
 
 export function setActive(value: boolean) {
-	vscode.commands.executeCommand("setContext", "zokuzoku.active", value);
+    vscode.commands.executeCommand("setContext", "zokuzoku.active", value);
 
     if (value) {
         LocalizedDataManager.init();
