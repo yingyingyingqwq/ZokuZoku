@@ -99,17 +99,21 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         }
 
         let prevEditPromise = Promise.resolve();
-        let nodesPromise = MdbEditorProvider.generateNodes(tableName);
-        webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
+        let dataPromise = MdbEditorProvider.generateData(tableName);
+        webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
+            let data: InitData;
+            try {
+                data = await dataPromise;
+            }
+            catch (e) {
+                return vscode.window.showErrorMessage("" + e);
+            }
             switch (message.type) {
                 case "init":
                     postMessage({ type: "setExplorerTitle", title: tableName });
                     // Just making sure to prevent data races
                     initReadPromise.finally(() => {
-                        nodesPromise.then(nodes => {
-                            postMessage({ type: "setNodes", nodes });
-                        })
-                        .catch(e => vscode.window.showErrorMessage("" + e));
+                        postMessage({ type: "setNodes", nodes: data.nodes });
                     });
                     fontHelper.onInit(webviewPanel.webview);
                     break;
@@ -200,6 +204,36 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
                         }
                     });
                     break;
+
+                case "getCategoryFull":
+                    if (data.categoryMap) {
+                        if (json.ast.type != "Object") { break; }
+
+                        const categoryId = message.path[0];
+                        const category = data.categoryMap[categoryId];
+                        if (!category) { break; }
+
+                        const categoryProp = json.astObjectsProps.get(json.ast)?.[categoryId];
+                        if (categoryProp?.value.type !== "Object") { break; }
+
+                        const tlCategory = categoryProp.value;
+                        const tlIdSet = new Set(tlCategory.children.map(c => c.key.value));
+                        let full = true;
+
+                        for (const entry of category) {
+                            if (!tlIdSet.has(entry.id as string)) {
+                                full = false;
+                                break;
+                            }
+                        }
+
+                        postMessage({
+                            type: "setCategoryFull",
+                            path: message.path,
+                            full
+                        });
+                    }
+                    break;
             }
         });
     }
@@ -242,7 +276,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         }
     }
 
-    static async generateNodes(tableName: MdbTableName): Promise<ITreeNode[]> {
+    static async generateData(tableName: MdbTableName): Promise<InitData> {
         const columns = TABLE_COLUMNS[tableName];
         const columnNames = columns.map(s => `"${s}"`).join(",");
         const orderByNames = columns.slice(0, -1).map(s => `"${s}"`).join(",");
@@ -253,10 +287,11 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         const rows = queryRes[0].rows;
 
         const nodes: ITreeNode[] = [];
+        let categoryMap: {[key: string]: IEntryTreeNode[]} | undefined;
         const nameGetter = TABLE_ENTRY_NAME_GETTERS[tableName];
         if (columns.length === 3) {
             const categorizer = TABLE_CATEGORIZERS[tableName];
-            const categoryMap: {[key: string]: IEntryTreeNode[]} = {};
+            categoryMap = {};
             for (const [ categoryId, id, text ] of rows) {
                 let categoryChildren = categoryMap[categoryId];
 
@@ -309,10 +344,15 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
             }
         }
 
-        return nodes;
+        return { nodes, categoryMap };
     }
 
     protected override getHtmlForWebview(webview: vscode.Webview): string {
         return getEditorHtml(this.context.extensionUri, webview, "commonEditor", "Lyrics Editor");
     }
+}
+
+interface InitData {
+    nodes: ITreeNode[];
+    categoryMap?: {[key: string]: IEntryTreeNode[]};
 }

@@ -119,17 +119,16 @@
         }
     }
 
-    let onMessage: ((e: MessageEvent<ControllerMessage>) => void) | undefined;
-    if (isEntry) {
-        onMessage = e => {
-            const message = e.data;
-            switch (message.type) {
-                case "setExists":
-                    if (message.path.join("/") == pathStr) {
-                        noContent = !message.exists;
-                    }
-                    break;
+    let categoryFull = false;
+    let onMessage = (e: MessageEvent<ControllerMessage>) => {
+        const message = e.data;
+        if (isEntry) {
+            if (message.type == "setExists" && message.path.join("/") == pathStr) {
+                noContent = !message.exists;
             }
+        }
+        else if (message.type == "setCategoryFull" && message.path.join("/") == pathStr) {
+            categoryFull = message.full;
         }
     }
 
@@ -141,6 +140,13 @@
             path
         });
         existsChecked = true;
+    }
+
+    $: if (hideExists && node.type == "category" && isInView) {
+        vscode.postMessage({
+            type: "getCategoryFull",
+            path
+        });
     }
 
     function prevEntries() {
@@ -156,7 +162,7 @@
 
 <svelte:window on:message={onMessage} />
 
-{#if !hideExists || noContent || node.type != "entry"}
+{#if !hideExists || noContent || (!isEntry && !categoryFull)}
     <IntersectionObserver {element} bind:intersecting={isInView}>
         <div bind:this={element}
             class="tree-node" class:focus class:noContent

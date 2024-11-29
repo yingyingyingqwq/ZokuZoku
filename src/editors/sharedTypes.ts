@@ -27,6 +27,10 @@ export type ControllerMessage = {
     type: "showInputBoxResult",
     id: string,
     result?: string
+} | {
+    type: "setCategoryFull",
+    path: TreeNodeId[],
+    full: boolean
 };
 
 export type StoryEditorControllerMessage = ControllerMessage | {
@@ -70,6 +74,9 @@ export type EditorMessage = {
     type: "showInputBox",
     id: string,
     placeholder: string
+} | {
+    type: "getCategoryFull",
+    path: TreeNodeId[]
 };
 
 export type TreeNodeId = string | number;
