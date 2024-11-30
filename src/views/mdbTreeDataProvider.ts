@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TABLE_NAMES } from '../editors/mdbEditor';
+import { MDB_TABLE_NAMES } from '../sqlite';
 
 export default class MdbTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     static register(context: vscode.ExtensionContext): vscode.Disposable {
@@ -13,7 +13,7 @@ export default class MdbTreeDataProvider implements vscode.TreeDataProvider<vsco
     }
 
     getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
-        return TABLE_NAMES.map(name => {
+        return MDB_TABLE_NAMES.map(name => {
             return {
                 id: name,
                 label: name,

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { JsonDocument, JsonEdit } from './jsonDocument';
 
-interface LocalizedDataConfig {
+export interface LocalizedDataConfig {
     localize_dict?: string,
     hashed_dict?: string,
     text_data_dict?: string,
@@ -34,7 +34,7 @@ interface LocalizedDataConfig {
     news_url?: string,
 }
 
-interface UITextConfig {
+export interface UITextConfig {
     text?: string,
     font_size?: number,
     line_spacing?: number

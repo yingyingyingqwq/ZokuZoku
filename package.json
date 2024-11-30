@@ -143,6 +143,14 @@
         "title": "ZokuZoku: Open story editor"
       },
       {
+        "command": "zokuzoku.runAllAutomations",
+        "title": "ZokuZoku: Run all automations"
+      },
+      {
+        "command": "zokuzoku.runAutomation",
+        "title": "ZokuZoku: Run automation..."
+      },
+      {
         "command": "zokuzoku.hachimi.reloadLocalizedData",
         "title": "ZokuZoku: (Hachimi) Reload localized data"
       },

@@ -3,20 +3,9 @@ import { getEditorHtml, makeEditForStringProperty } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument, utils } from '../core';
 import textDataCategories from './mdbTextDataCategories';
-import SQLite from '../sqlite';
+import SQLite, { MDB_TABLE_COLUMNS, MDB_TABLE_NAMES, MdbTableName } from '../sqlite';
 import fontHelper from './fontHelper';
-import config from '../config';
 import { EditorBase } from './editorBase';
-
-export const TABLE_NAMES = ["text_data", "character_system_text", "race_jikkyo_comment", "race_jikkyo_message"] as const;
-export type MdbTableName = (typeof TABLE_NAMES)[number];
-
-const TABLE_COLUMNS: {[K in MdbTableName]: string[]} = {
-    "text_data": [ "category", "index", "text" ],
-    "character_system_text": [ "character_id", "voice_id", "text" ],
-    "race_jikkyo_comment": [ "id", "message" ],
-    "race_jikkyo_message": [ "id", "message" ]
-};
 
 const TABLE_CATEGORIZERS: {[K in MdbTableName]?: (column: string) => Promise<string> | string} = {
     "text_data": category => `${category} ${textDataCategories[category] ?? ""}`,
@@ -254,7 +243,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
                 tableName = undefined;
             }
             else {
-                for (const name of TABLE_NAMES) {
+                for (const name of MDB_TABLE_NAMES) {
                     if (filename.includes(name)) {
                         tableName = name;
                         break;
@@ -277,14 +266,8 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
     }
 
     static async generateData(tableName: MdbTableName): Promise<InitData> {
-        const columns = TABLE_COLUMNS[tableName];
-        const columnNames = columns.map(s => `"${s}"`).join(",");
-        const orderByNames = columns.slice(0, -1).map(s => `"${s}"`).join(",");
-        const sqlite = SQLite.instance;
-        const queryRes = await sqlite.queryMdb(
-            `SELECT ${columnNames} FROM ${tableName} ORDER BY ${orderByNames}`
-        );
-        const rows = queryRes[0].rows;
+        const columns = MDB_TABLE_COLUMNS[tableName];
+        const rows = await SQLite.instance.loadMdbTable(tableName);
 
         const nodes: ITreeNode[] = [];
         let categoryMap: {[key: string]: IEntryTreeNode[]} | undefined;

@@ -74,7 +74,27 @@ class SQLite {
             this.sqliteCommand = "";
         }
     }
+
+    async loadMdbTable(tableName: MdbTableName) {
+        const columns = MDB_TABLE_COLUMNS[tableName];
+        const columnNames = columns.map(s => `"${s}"`).join(",");
+        const orderByNames = columns.slice(0, -1).map(s => `"${s}"`).join(",");
+        const queryRes = await SQLite.instance.queryMdb(
+            `SELECT ${columnNames} FROM ${tableName} ORDER BY ${orderByNames}`
+        );
+        return queryRes[0].rows;
+    }
 }
+
+export const MDB_TABLE_NAMES = ["text_data", "character_system_text", "race_jikkyo_comment", "race_jikkyo_message"] as const;
+export type MdbTableName = (typeof MDB_TABLE_NAMES)[number];
+
+export const MDB_TABLE_COLUMNS: {[K in MdbTableName]: string[]} = {
+    "text_data": [ "category", "index", "text" ],
+    "character_system_text": [ "character_id", "voice_id", "text" ],
+    "race_jikkyo_comment": [ "id", "message" ],
+    "race_jikkyo_message": [ "id", "message" ]
+};
 
 
 export function buildQueryExecutionOptions(setupDatabaseConfig: { [dbPath: string]: { sql: string[]; } }, dbPath: string): QueryExecutionOptions {

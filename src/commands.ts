@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { LocalizeDictEditorProvider } from './editors/localizeDictEditor';
-import { LocalizedDataManager, setActive, utils } from './core';
+import { automation, LocalizedDataManager, setActive, utils } from './core';
 import config from './config';
 import { LyricsEditorProvider } from './editors/lyricsEditor';
-import { MdbEditorProvider, MdbTableName } from './editors/mdbEditor';
+import { MdbEditorProvider } from './editors/mdbEditor';
 import HachimiIpc from './core/hachimiIpc';
 import { EditorBase } from './editors/editorBase';
 import StoriesTreeDataProvider from './views/storiesTreeDataProvider';
@@ -13,6 +13,7 @@ import LyricsTreeDataProvider from './views/lyricsTreeDataProvider';
 import { RaceStoryEditorProvider } from './editors/raceStoryEditor';
 import { StoryEditorProvider } from './editors/storyEditor';
 import { updateHachimiConfig } from './core/utils';
+import { MdbTableName } from './sqlite';
 
 type CommandTree = {[key: string]: ((...args: any[]) => any) | CommandTree};
 
@@ -117,6 +118,39 @@ const COMMANDS: CommandTree = {
             });
         },
 
+        runAllAutomations() {
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Running automations..."
+            }, async () => {
+                try {
+                    await automation.runAll();
+                }
+                catch (e) {
+                    vscode.window.showErrorMessage("" + e);
+                }
+            });
+        },
+
+        async runAutomation() {
+            const filename = await vscode.window.showQuickPick(automation.getScripts(), {
+                placeHolder: "Pick a script to run"
+            });
+            if (filename) {
+                vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: `Running ${filename}...`
+                }, async () => {
+                    try {
+                        await automation.run(filename);
+                    }
+                    catch (e) {
+                        vscode.window.showErrorMessage("" + e);
+                    }
+                });
+            }
+        },
+
         hachimi: {
             reloadLocalizedData() {
                 HachimiIpc.callWithProgress({ type: "ReloadLocalizedData" }).catch(e => {
@@ -124,11 +158,10 @@ const COMMANDS: CommandTree = {
                 });
             },
             setLocalizedDataDir() {
-                let folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
-                if (!folderUri) {
-                    throw new Error("No workspace folder.");
+                let localizedDataDir = LocalizedDataManager.instance?.dirUri.fsPath;
+                if (!localizedDataDir) {
+                    return vscode.window.showErrorMessage("ZokuZoku has not been activated.");
                 }
-                let localizedDataDir = vscode.Uri.joinPath(folderUri, "localized_data").fsPath;
 
                 updateHachimiConfig(config => {
                     if (config._localized_data_dir || config._translation_repo_index) {
