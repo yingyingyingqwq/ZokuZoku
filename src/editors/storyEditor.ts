@@ -166,23 +166,23 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 case "init":
                     postMessage({ type: "setExplorerTitle", title: "Story" });
                     initReadPromise.finally(async () => {
+                        let noWrap = false;
                         if (json.ast.type === "Object") {
                             const noWrapValue = json.astObjectsProps.get(json.ast)?.no_wrap?.value;
-                            const ldManager = await LocalizedDataManager.instancePromise;
-                            await ldManager.configReadPromise;
-                            const config = ldManager.configJson.getValue();
-                            postMessage({
-                                type: "setConfig",
-                                config: {
-                                    noWrap: !config?.use_text_wrapper || 
-                                        (noWrapValue?.type === "Literal" && noWrapValue.value === true),
-                                    isStoryView: data.isStoryView,
-                                    lineSpacingMultiplier: config?.text_frame_line_spacing_multiplier,
-                                    fontSizeMultiplier: config?.text_frame_font_size_multiplier,
-                                    lineWidthMultiplier: config?.line_width_multiplier
-                                }
-                            });
+                            noWrap = noWrapValue?.type === "Literal" && noWrapValue.value === true;
                         }
+                        const ldManager = await LocalizedDataManager.instancePromise;
+                        const config = ldManager.config;
+                        postMessage({
+                            type: "setConfig",
+                            config: {
+                                noWrap: !config?.use_text_wrapper || noWrap,
+                                isStoryView: data.isStoryView,
+                                lineSpacingMultiplier: config?.text_frame_line_spacing_multiplier,
+                                fontSizeMultiplier: config?.text_frame_font_size_multiplier,
+                                lineWidthMultiplier: config?.line_width_multiplier
+                            }
+                        });
                         postMessage({ type: "setNodes", nodes: data.nodes });
                         if (data.title) {
                             postMessage({ type: "setExplorerTitle", title: "Story: " + data.title });

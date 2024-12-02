@@ -51,10 +51,9 @@ const DEFAULT_CONFIG: LocalizedDataConfig = {
 };
 
 export class LocalizedDataManager {
-    private config = DEFAULT_CONFIG;
+    config = DEFAULT_CONFIG;
     dirUri: vscode.Uri;
     configJson: JsonDocument<LocalizedDataConfig>;
-    configReadPromise: Promise<void> | undefined;
 
     private constructor() {
         let folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;

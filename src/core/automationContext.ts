@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import SQLite from '../sqlite';
-import { LocalizedDataConfig, LocalizedDataManager } from './localizedDataManager';
+import { LocalizedDataManager } from './localizedDataManager';
 import path from 'path';
 import fs from 'fs/promises';
 import { PyObject } from 'pymport';
@@ -11,8 +11,6 @@ function zk() {
     let mdbCharacterSystemText: {[key: string]: {[key: string]: string}} | undefined;
     let mdbRaceJikkyoComment: {[key: string]: string} | undefined;
     let mdbRaceJikkyoMessage: {[key: string]: string} | undefined;
-
-    let ldConfig: LocalizedDataConfig | undefined;
 
     function getFullPath(relPath: string) {
         const localizedDataDir = LocalizedDataManager.instance?.dirUri.fsPath;
@@ -111,12 +109,8 @@ function zk() {
         },
 
         async loadLocalizedDataConfig() {
-            if (!ldConfig) {
-                const ldManager = await LocalizedDataManager.instancePromise;
-                await ldManager.configReadPromise;
-                ldConfig = ldManager.configJson.getValue();
-            }
-            return ldConfig;
+            const ldManager = await LocalizedDataManager.instancePromise;
+            return ldManager.config;
         },
 
         showInfo(c: string) { vscode.window.showInformationMessage(c) },
