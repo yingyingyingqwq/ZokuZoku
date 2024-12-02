@@ -65,7 +65,7 @@ async function decodeToWavFiles(awbPath: string, key: number, wavDir: string) {
     await fs.mkdir(wavDir, { recursive: true });
     for (let i = 0; i < list.length; i++) {
         const hcaBuffer = list[i];
-        const wavPath = path.join(wavDir, (i + 1) + ".wav");
+        const wavPath = path.join(wavDir, i + ".wav");
         const wavBuffer = await hca.decode(hcaBuffer, key, list.config.key);
         await fs.writeFile(wavPath, wavBuffer);
     }

@@ -29,18 +29,18 @@ function getAssetPath(hash: string) {
         throw new Error("Attempted to load an asset file, but the game data directory is not set");
     }
 
-    let bundleDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
+    let assetDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
     return {
-        bundleDir,
-        bundlePath: path.join(bundleDir, hash)
+        assetDir,
+        assetPath: path.join(assetDir, hash)
     };
 }
 
 async function loadBundleByHash(hash: string): Promise<UnityPyEnv> {
-    let { bundleDir, bundlePath } = getAssetPath(hash);
+    let { assetDir, assetPath } = getAssetPath(hash);
     let exists: boolean;
     try {
-        await fs.stat(bundlePath);
+        await fs.stat(assetPath);
         exists = true;
     }
     catch {
@@ -59,11 +59,11 @@ async function loadBundleByHash(hash: string): Promise<UnityPyEnv> {
         }
 
         let downloadUrl = getBundleDownloadUrl(platform, hash);
-        await fs.mkdir(bundleDir, { recursive: true });
-        await downloader.downloadToFile(downloadUrl, "Downloading asset bundle: " + hash, bundlePath, true);
+        await fs.mkdir(assetDir, { recursive: true });
+        await downloader.downloadToFile(downloadUrl, "Downloading asset bundle: " + hash, assetPath, true);
     }
 
-    return UnityPy.load(bundlePath);
+    return UnityPy.load(assetPath);
 }
 
 const META_PLATFORM_QUERY = `SELECT n FROM c WHERE n = '//Android' OR n = '//Windows'`;
@@ -77,41 +77,35 @@ function getBundleDownloadUrl(platform: string, hash: string) {
     return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
 }
 
-async function tryDownloadGenericAsset(name: string): Promise<boolean> {
+async function loadGenericAsset(name: string): Promise<string> {
     let hash = await getAssetHash(name);
     if (hash) {
-        return tryDownloadGenericAsset(hash);
+        return loadGenericAssetByHash(hash);
     }
     else {
         throw new Error("Failed to resolve generic asset with name: " + name);
     }
 }
 
-async function tryDownloadGenericAssetByHash(hash: string): Promise<boolean> {
-    let { bundleDir, bundlePath } = getAssetPath(hash);
+async function loadGenericAssetByHash(hash: string): Promise<string> {
+    let { assetDir, assetPath } = getAssetPath(hash);
     try {
-        await fs.stat(bundlePath);
-        return true;
+        await fs.stat(assetPath);
+        return assetPath;
     }
     catch {
     }
 
     let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
     if (!autoDownloadBundles) {
-        return false;
+        throw new Error("Asset not found: " + hash);
     }
 
-    try {
-        let downloadUrl = getGenericDownloadUrl(hash);
-        await fs.mkdir(bundleDir, { recursive: true });
-        await downloader.downloadToFile(downloadUrl, "Downloading generic asset: " + hash, bundlePath, true);
-    }
-    catch (e) {
-        console.error(e);
-        return false;
-    }
+    let downloadUrl = getGenericDownloadUrl(hash);
+    await fs.mkdir(assetDir, { recursive: true });
+    await downloader.downloadToFile(downloadUrl, "Downloading generic asset: " + hash, assetPath, true);
 
-    return true;
+    return assetPath;
 }
 
 function getGenericDownloadUrl(hash: string) {
@@ -123,6 +117,6 @@ export default {
     loadBundle,
     getAssetPath,
     loadBundleByHash,
-    tryDownloadGenericAsset,
-    tryDownloadGenericAssetByHash
+    loadGenericAsset,
+    loadGenericAssetByHash
 };

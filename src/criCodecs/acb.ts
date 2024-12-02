@@ -48,7 +48,7 @@ async function decodeToWavFiles(acbPath: string, key: number, wavDir: string) {
         const isMemory = Waveform.Streaming === 0;
         const hcaBuffer = isMemory ? acb.memoryHcas[Waveform.MemoryAwbId] : acb.streamHcas[Waveform.StreamAwbPortNo][Waveform.StreamAwbId];
         const awbKey = isMemory ? acb.memoryHcas.config.key : acb.streamHcas[Waveform.StreamAwbPortNo].config.key;
-        const name = isMemory ? `memory_${++memory}.wav` : `stream_${++stream}.wav`;
+        const name = isMemory ? `memory_${memory++}.wav` : `stream_${stream++}.wav`;
         const wavPath = path.join(wavDir, name);
         const wavBuffer = await hca.decode(hcaBuffer, key, awbKey);
         await fs.writeFile(wavPath, wavBuffer);

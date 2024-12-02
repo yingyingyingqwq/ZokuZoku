@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { JsonDocument, JsonEdit } from '../core';
-import config from '../config';
 
 export function getNonce(): string {
     let text = '';
@@ -115,19 +114,4 @@ export function makeEditForArray<T>(
         edit = makeUpdateEditForArray(index, value);
     }
     return edit;
-}
-
-export function setupWebview(provider: {
-    getHtmlForWebview(this: any, webview: vscode.Webview): string,
-    context: vscode.ExtensionContext
-}, webview: vscode.Webview) {
-    const gameDataDir = config().get<string>("gameDataDir");
-    webview.options = {
-        enableScripts: true,
-        localResourceRoots: [
-            provider.context.extensionUri,
-            ...(gameDataDir ? [ vscode.Uri.file(gameDataDir) ] : [])
-        ]
-    };
-    webview.html = provider.getHtmlForWebview(webview);
 }

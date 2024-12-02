@@ -18,7 +18,7 @@ export class EditorBase {
         return "";
     }
 
-    protected setupWebview(webviewPanel: vscode.WebviewPanel) {
+    protected setupWebview(webviewPanel: vscode.WebviewPanel, extraLocalResourceRoots: vscode.Uri[] = []) {
         const webview = webviewPanel.webview;
         const gameDataDir = config().get<string>("gameDataDir");
         const customFont = config().get<string>("customFont");
@@ -27,7 +27,8 @@ export class EditorBase {
             localResourceRoots: [
                 this.context.extensionUri,
                 ...(gameDataDir ? [ vscode.Uri.file(gameDataDir) ] : []),
-                ...(customFont ? [ vscode.Uri.file(dirname(customFont)) ] : [])
+                ...(customFont ? [ vscode.Uri.file(dirname(customFont)) ] : []),
+                ...extraLocalResourceRoots
             ]
         };
         webview.html = this.getHtmlForWebview(webview);

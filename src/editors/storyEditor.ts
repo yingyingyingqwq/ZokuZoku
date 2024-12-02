@@ -10,6 +10,8 @@ import { EditorBase } from './editorBase';
 import { AssetBundle } from '../unityPy/classes/assetBundle';
 import { PPtr } from '../unityPy/classes/pPtr';
 import { ObjectBase } from '../unityPy/classes';
+import path from 'path';
+import os from 'os';
 
 const STORY_VIEW_CATEGORIES = new Set<string>(["02", "04", "09"]);
 
@@ -142,6 +144,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         }
         
         // Init webview
+        let assetInfo = StoryEditorProvider.parseFilename(document.uri);
         this.setupWebview(webviewPanel);
 
         // Messaging setup
@@ -149,7 +152,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             webviewPanel.webview.postMessage(message);
         }
 
-        let dataPromise = StoryEditorProvider.generateData(document.uri);
+        let dataPromise = StoryEditorProvider.generateData(assetInfo);
         let prevEditPromise: Promise<any> = Promise.resolve();
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             let data: InitData;
@@ -300,7 +303,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         });
     }
 
-    static async generateData(uri: vscode.Uri): Promise<InitData> {
+    static parseFilename(uri: vscode.Uri): StoryAssetInfo {
         const pathSplit = uri.path.split("/");
         const filename = pathSplit.at(-1);
         if (!filename) {
@@ -310,17 +313,34 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         let assetBundleName: string;
         let assetName: string;
         let isStoryView: boolean;
-        const matches = filename.match(/^(storytimeline_(\d{2})(\d{4})\d{3})\.json$/) ||
-            filename.match(/^(hometimeline_(\d{5})_(\d{2})_\d{7})\.json$/);
+        let voiceAssetName: string;
+        let voiceCacheDir: string;
+        //                               1              2 3      4
+        const matches = filename.match(/^(storytimeline_((\d{2})(\d{4})\d{3}))\.json$/) ||
+            filename.match(/^(hometimeline_((\d{5})_(\d{2})_\d{7}))\.json$/);
         if (matches) {
             let timelineType = filename.startsWith("story") ? "story" : "home";
             isStoryView = timelineType === "story" ? STORY_VIEW_CATEGORIES.has(matches[2]) : false;
-            assetBundleName = `${timelineType}/data/${matches[2]}/${matches[3]}/${matches[1]}`;
+            assetBundleName = `${timelineType}/data/${matches[3]}/${matches[4]}/${matches[1]}`;
             assetName = `assets/_gallopresources/bundle/resources/${assetBundleName}.asset`;
+            voiceAssetName = `sound/c/snd_voi_story_${matches[2]}.awb`;
+            voiceCacheDir = path.join(os.homedir(), ".zokuzoku", "cache", `snd_voi_story_${matches[2]}`);
         }
         else {
             throw new Error("Failed to parse filename");
         }
+
+        return {
+            assetBundleName,
+            assetName,
+            isStoryView,
+            voiceAssetName,
+            voiceCacheDir
+        }
+    }
+
+    static async generateData(info: StoryAssetInfo): Promise<InitData> {
+        const { assetBundleName, assetName, isStoryView } = info;
 
         const env = await assetHelper.loadBundle(assetBundleName);
         const objects = env.objects;
@@ -522,6 +542,14 @@ interface TextBlockDict {
     text?: string,
     choice_data_list?: string[],
     color_text_info_list?: string[]
+}
+
+interface StoryAssetInfo {
+    assetBundleName: string;
+    assetName: string;
+    isStoryView: boolean;
+    voiceAssetName: string;
+    voiceCacheDir: string;
 }
 
 interface InitData {

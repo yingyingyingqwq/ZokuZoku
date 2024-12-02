@@ -32,3 +32,7 @@ After that, you can work on the project just like you would with any other VSCod
 
 # License
 [GNU GPLv3](LICENSE)
+
+Files in the `src/criCodecs` directory are licensed under [MIT](src/criCodecs/LICENSE).
+
+Files in the `externals` directory are exempt from this project's license.

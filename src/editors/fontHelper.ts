@@ -3,18 +3,9 @@ import assetHelper from "../core/assetHelper";
 import config from '../config';
 import { ControllerMessage } from './sharedTypes';
 
-const FONT_ASSET_NAME = "font/dynamic01.otf";
-let gameFontUri: vscode.Uri | undefined;
 async function getGameFontUri() {
-    if (!gameFontUri) {
-        const hash = await assetHelper.getAssetHash(FONT_ASSET_NAME);
-        if (!hash || !(await assetHelper.tryDownloadGenericAssetByHash(hash))) {
-            return;
-        }
-        const { bundlePath } = assetHelper.getAssetPath(hash);
-        gameFontUri = vscode.Uri.file(bundlePath);
-    }
-    return gameFontUri;
+    let assetPath = await assetHelper.loadGenericAsset("font/dynamic01.otf");
+    return vscode.Uri.file(assetPath);
 }
 
 async function onInit(webview: vscode.Webview) {
@@ -23,9 +14,12 @@ async function onInit(webview: vscode.Webview) {
     if (!useGameFont && !customFont) { return; }
 
     try {
-        const uri = customFont ? vscode.Uri.file(customFont) : await getGameFontUri();
-        if (!uri) {
-            throw new Error("Font asset not found or failed to download");
+        let uri: vscode.Uri;
+        try {
+            uri = customFont ? vscode.Uri.file(customFont) : await getGameFontUri();
+        }
+        catch (e) {
+            throw new AggregateError([e], "Failed to load font asset");
         }
         const message: ControllerMessage = {
             type: "setGameFont",
