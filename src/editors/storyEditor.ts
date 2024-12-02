@@ -177,7 +177,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             type: "setConfig",
                             config: {
                                 noWrap: !config?.use_text_wrapper || noWrap,
-                                isStoryView: data.isStoryView,
+                                isStoryView: assetInfo.isStoryView,
                                 lineSpacingMultiplier: config?.text_frame_line_spacing_multiplier,
                                 fontSizeMultiplier: config?.text_frame_font_size_multiplier,
                                 lineWidthMultiplier: config?.line_width_multiplier
@@ -320,7 +320,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             filename.match(/^(hometimeline_((\d{5})_(\d{2})_\d{7}))\.json$/);
         if (matches) {
             let timelineType = filename.startsWith("story") ? "story" : "home";
-            isStoryView = timelineType === "story" ? STORY_VIEW_CATEGORIES.has(matches[2]) : false;
+            isStoryView = timelineType === "story" ? STORY_VIEW_CATEGORIES.has(matches[3]) : false;
             assetBundleName = `${timelineType}/data/${matches[3]}/${matches[4]}/${matches[1]}`;
             assetName = `assets/_gallopresources/bundle/resources/${assetBundleName}.asset`;
             voiceAssetName = `sound/c/snd_voi_story_${matches[2]}.awb`;
@@ -521,8 +521,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         return {
             title: resTitle,
             nodes,
-            contentRanges,
-            isStoryView
+            contentRanges
         };
     }
 
@@ -556,7 +555,6 @@ interface InitData {
     title?: string;
     nodes: ITreeNode[];
     contentRanges: BlockContentRanges[];
-    isStoryView: boolean
 }
 
 interface BlockContentRanges {
