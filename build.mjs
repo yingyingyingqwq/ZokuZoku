@@ -17,5 +17,8 @@ await esbuild.build({
     platform: 'node',
     alias: {
         '@mapbox/node-pre-gyp': resolve(__dirname, 'node-pre-gyp.js')
+    },
+    banner: {
+        js: 'const __BUNDLED__ = true;',
     }
 });
