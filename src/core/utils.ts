@@ -3,6 +3,7 @@ import SQLite from '../sqlite';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { PathLike } from 'fs';
 
 export function addIndent(source: string, indent: string, addAtStart = false): string {
     if (indent.length) {
@@ -47,6 +48,16 @@ export async function getTextDataCategoryCached(category: number) {
 export async function uriExists(uri: vscode.Uri): Promise<boolean> {
     try {
         await vscode.workspace.fs.stat(uri);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+
+export async function pathExists(path: PathLike): Promise<boolean> {
+    try {
+        await fs.stat(path);
         return true;
     }
     catch {

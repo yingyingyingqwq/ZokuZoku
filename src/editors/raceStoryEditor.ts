@@ -12,6 +12,7 @@ import path from 'path';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import acb from '../criCodecs/acb';
 import fs from 'fs/promises';
+import { pathExists } from '../core/utils';
 
 export class RaceStoryEditorProvider extends EditorBase implements vscode.CustomTextEditorProvider {
     static readonly viewType = 'zokuzoku.raceStoryEditor';
@@ -68,7 +69,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         let prevEditPromise = Promise.resolve();
         let nodesPromise = RaceStoryEditorProvider.generateNodes(assetInfo);
         let loadVoicePromise: Promise<{[key: string]: string}> | undefined;
-        webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
+        webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             switch (message.type) {
                 case "init":
                     postMessage({ type: "setExplorerTitle", title: "Race Story" });
@@ -129,7 +130,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                 }
 
                 case "loadVoice":
-                    if (!loadVoicePromise) {
+                    if (!loadVoicePromise || !(await pathExists(assetInfo.voiceCacheDir))) {
                         loadVoicePromise = new Promise(async (resolve, reject) => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {

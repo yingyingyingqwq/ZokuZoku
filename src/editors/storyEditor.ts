@@ -14,6 +14,7 @@ import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import path from 'path';
 import afs2 from '../criCodecs/afs2';
 import fs from 'fs/promises';
+import { pathExists } from '../core/utils';
 
 const STORY_VIEW_CATEGORIES = new Set<string>(["02", "04", "09"]);
 
@@ -307,7 +308,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 }
 
                 case "loadVoice":
-                    if (!loadVoicePromise) {
+                    if (!loadVoicePromise || !(await pathExists(assetInfo.voiceCacheDir))) {
                         loadVoicePromise = new Promise(async (resolve, reject) => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
