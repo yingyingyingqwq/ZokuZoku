@@ -14,6 +14,9 @@ import { RaceStoryEditorProvider } from './editors/raceStoryEditor';
 import { StoryEditorProvider } from './editors/storyEditor';
 import { updateHachimiConfig } from './core/utils';
 import { MdbTableName } from './sqlite';
+import fs from 'fs/promises';
+import path from 'path';
+import { ZOKUZOKU_DIR } from './defines';
 
 type CommandTree = {[key: string]: ((...args: any[]) => any) | CommandTree};
 
@@ -149,6 +152,21 @@ const COMMANDS: CommandTree = {
                     }
                 });
             }
+        },
+
+        clearCache() {
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Clearing cache..."
+            }, async () => {
+                try {
+                    await fs.rm(path.join(ZOKUZOKU_DIR, "cache"), { recursive: true, force: true });
+                    vscode.window.showInformationMessage("Cache cleared.");
+                }
+                catch (e) {
+                    vscode.window.showErrorMessage("Failed to clear cache: " + e);
+                }
+            });
         },
 
         hachimi: {

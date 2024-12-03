@@ -151,6 +151,10 @@
         "title": "ZokuZoku: Run automation..."
       },
       {
+        "command": "zokuzoku.clearCache",
+        "title": "ZokuZoku: Clear cache"
+      },
+      {
         "command": "zokuzoku.hachimi.reloadLocalizedData",
         "title": "ZokuZoku: (Hachimi) Reload localized data"
       },
