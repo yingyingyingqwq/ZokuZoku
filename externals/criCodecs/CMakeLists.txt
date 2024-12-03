@@ -25,7 +25,12 @@ if(MSVC)
     set(LIBS ${LIBS} delayimp node)
 endif()
 
-add_library(${PROJECT_NAME} SHARED "src/addon.cpp" ${CMAKE_JS_SRC})
+set(SOURCE_FILES "src/addon.cpp")
+if(MSVC)
+    set(SOURCE_FILES ${SOURCE_FILES} "src/load_dll_hook.cpp")
+endif()
+
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})
