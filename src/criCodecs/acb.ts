@@ -42,6 +42,7 @@ async function parse(acbPath: string) {
 async function decodeToWavFiles(acbPath: string, key: number, wavDir: string) {
     const acb = await parse(acbPath);
     await fs.mkdir(wavDir, { recursive: true });
+    const files = [];
     let memory = 0, stream = 0;
     for (let i = 0; i < acb.WaveformTable.length; i++) {
         const Waveform = acb.WaveformTable[i];
@@ -52,7 +53,9 @@ async function decodeToWavFiles(acbPath: string, key: number, wavDir: string) {
         const wavPath = path.join(wavDir, name);
         const wavBuffer = await hca.decode(hcaBuffer, key, awbKey);
         await fs.writeFile(wavPath, wavBuffer);
+        files.push(wavPath);
     }
+    return files;
 }
 
 export default {

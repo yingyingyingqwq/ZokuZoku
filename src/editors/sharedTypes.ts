@@ -31,6 +31,11 @@ export type ControllerMessage = {
     type: "setCategoryFull",
     path: TreeNodeId[],
     full: boolean
+} | {
+    type: "loadVoice",
+    uris: {[key: string]: string}
+} | {
+    type: "enableVoicePlayer"
 };
 
 export type StoryEditorControllerMessage = ControllerMessage | {
@@ -77,6 +82,8 @@ export type EditorMessage = {
 } | {
     type: "getCategoryFull",
     path: TreeNodeId[]
+} | {
+    type: "loadVoice"
 };
 
 export type TreeNodeId = string | number;

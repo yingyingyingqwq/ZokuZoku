@@ -24,11 +24,9 @@
         {
             icon: "unmute",
             tooltip: "Play voice clip",
-            onClick: () => vscode.postMessage({
-                type: "showMessage",
-                messageType: "warning",
-                content: "The programmer has a nap. Hold out! Programmer!"
-            })
+            onClick: () => {
+                vscode.postMessage({ type: "loadVoice" });
+            }
         },
 
         null,

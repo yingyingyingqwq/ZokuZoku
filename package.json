@@ -300,7 +300,7 @@
     "@types/follow-redirects": "^1.14.4",
     "@types/json-to-ast": "^2.1.4",
     "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
+    "@types/node": "20.x",
     "@types/tar": "^6.1.13",
     "@types/vscode": "^1.88.0",
     "@typescript-eslint/eslint-plugin": "^8.14.0",

@@ -63,12 +63,15 @@ async function parse(pathOrBuffer: string | Buffer) {
 async function decodeToWavFiles(awbPath: string, key: number, wavDir: string) {
     const list = await parse(awbPath);
     await fs.mkdir(wavDir, { recursive: true });
+    const files = [];
     for (let i = 0; i < list.length; i++) {
         const hcaBuffer = list[i];
         const wavPath = path.join(wavDir, i + ".wav");
         const wavBuffer = await hca.decode(hcaBuffer, key, list.config.key);
         await fs.writeFile(wavPath, wavBuffer);
+        files.push(wavPath);
     }
+    return files;
 }
 
 export default {

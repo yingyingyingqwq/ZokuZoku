@@ -9,14 +9,9 @@ import downloader from './core/downloader';
 import { getGameInstallPath } from './core/utils';
 import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
+import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
-
-const ZOKUZOKU_DIR = path.join(os.homedir(), ".zokuzoku");
-const PYMPORT_DIR = path.join(ZOKUZOKU_DIR, "pymport");
-const PYMPORT_INSTALLED_FILE = path.join(PYMPORT_DIR, ".installed");
-const PYMPORT_VER = "v1.5.1";
-const UNITYPY_VER = "1.10.18";
 
 async function checkPymport(): Promise<boolean> {
     try {

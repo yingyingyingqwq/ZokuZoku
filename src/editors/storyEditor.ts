@@ -10,8 +10,10 @@ import { EditorBase } from './editorBase';
 import { AssetBundle } from '../unityPy/classes/assetBundle';
 import { PPtr } from '../unityPy/classes/pPtr';
 import { ObjectBase } from '../unityPy/classes';
+import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import path from 'path';
-import os from 'os';
+import afs2 from '../criCodecs/afs2';
+import fs from 'fs/promises';
 
 const STORY_VIEW_CATEGORIES = new Set<string>(["02", "04", "09"]);
 
@@ -145,7 +147,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         
         // Init webview
         let assetInfo = StoryEditorProvider.parseFilename(document.uri);
-        this.setupWebview(webviewPanel);
+        this.setupWebview(webviewPanel, [
+            vscode.Uri.file(assetInfo.voiceCacheDir)
+        ]);
 
         // Messaging setup
         function postMessage(message: StoryEditorControllerMessage) {
@@ -154,6 +158,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
         let dataPromise = StoryEditorProvider.generateData(assetInfo);
         let prevEditPromise: Promise<any> = Promise.resolve();
+        let loadVoicePromise: Promise<{[key: string]: string}> | undefined;
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             let data: InitData;
             try {
@@ -298,9 +303,45 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             });
                         }
                     });
+                    break;
                 }
+
+                case "loadVoice":
+                    if (!loadVoicePromise) {
+                        loadVoicePromise = new Promise(async (resolve, reject) => {
+                            const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
+                            if (!hash) {
+                                return reject(new Error("Voice data is not available for this story"));
+                            }
+                            const awbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            vscode.window.withProgress({
+                                location: vscode.ProgressLocation.Notification,
+                                title: "Decoding audio..."
+                            }, async () => {
+                                try {
+                                    const paths = await afs2.decodeToWavFiles(awbPath, HCA_KEY, assetInfo.voiceCacheDir);
+                                    const uris = Object.fromEntries(data.voiceCues.map(([id, cueId]) => [
+                                        id, webviewPanel.webview.asWebviewUri(vscode.Uri.file(paths[cueId])).toString()
+                                    ]));
+                                    resolve(uris);
+                                }
+                                catch (e) {
+                                    reject(e);
+                                }
+                            });
+                        });
+                    }
+                    loadVoicePromise
+                    .then(uris => postMessage({ type: "loadVoice", uris }))
+                    .catch(e => vscode.window.showErrorMessage("" + e));
+                    break;
             }
         });
+
+        // Always try to clean up voice cache, regardless if voice was loaded in *this session*
+        this.disposables.push(new vscode.Disposable(() => {
+            return fs.rm(assetInfo.voiceCacheDir, { recursive: true, force: true });
+        }));
     }
 
     static parseFilename(uri: vscode.Uri): StoryAssetInfo {
@@ -324,7 +365,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             assetBundleName = `${timelineType}/data/${matches[3]}/${matches[4]}/${matches[1]}`;
             assetName = `assets/_gallopresources/bundle/resources/${assetBundleName}.asset`;
             voiceAssetName = `sound/c/snd_voi_story_${matches[2]}.awb`;
-            voiceCacheDir = path.join(os.homedir(), ".zokuzoku", "cache", `snd_voi_story_${matches[2]}`);
+            voiceCacheDir = path.join(ZOKUZOKU_DIR, "cache", `snd_voi_story_${matches[2]}`);
         }
         else {
             throw new Error("Failed to parse filename");
@@ -340,7 +381,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
     }
 
     static async generateData(info: StoryAssetInfo): Promise<InitData> {
-        const { assetBundleName, assetName, isStoryView } = info;
+        const { assetBundleName, assetName } = info;
 
         const env = await assetHelper.loadBundle(assetBundleName);
         const objects = env.objects;
@@ -382,6 +423,8 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         const contentRanges: BlockContentRanges[] = [];
         let prevMaleNode: IEntryTreeNode | undefined;
         let prevFemaleNode: IEntryTreeNode | undefined;
+        const voiceCues: [string, number][] = [];
+        let globalCueOffset = 0;
         for (let i = 1; i < blockList.length; ++i) {
             const block = blockList.item(i);
             const textClip = block.TextTrack.ClipList.item(0).get_obj().read<StoryTimelineTextClipData>(false);
@@ -476,10 +519,12 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 }
             }
 
+            let cueOffset = 0;
             switch (differenceFlag) {
                 case DifferenceFlag.GenderMale:
                     name += " (male trainer)";
                     updatePrevMaleNode();
+                    cueOffset = 1;
                     break;
 
                 case DifferenceFlag.GenderFemale:
@@ -507,6 +552,11 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 colorTextInfoList: colorRange
             });
 
+            const cueId = textClip.CueId.toJS();
+            if (cueId !== -1) {
+                voiceCues.push([id.toString(), cueId + cueOffset + globalCueOffset]);
+            }
+
             switch (differenceFlag) {
                 case DifferenceFlag.GenderMale:
                     prevMaleNode = node;
@@ -514,6 +564,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
                 case DifferenceFlag.GenderFemale:
                     prevFemaleNode = node;
+                    if (cueId !== -1) {
+                        globalCueOffset += 1;
+                    }
                     break;
             }
         }
@@ -521,7 +574,8 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         return {
             title: resTitle,
             nodes,
-            contentRanges
+            contentRanges,
+            voiceCues
         };
     }
 
@@ -555,6 +609,7 @@ interface InitData {
     title?: string;
     nodes: ITreeNode[];
     contentRanges: BlockContentRanges[];
+    voiceCues: [string, number][];
 }
 
 interface BlockContentRanges {
@@ -603,6 +658,7 @@ interface StoryTimelineTextClipData extends ObjectBase {
     ColorTextInfoList: ColorTextInfo[];
     NextBlock: number;
     DifferenceFlag: DifferenceFlag;
+    CueId: number;
 }
 
 enum DifferenceFlag {
