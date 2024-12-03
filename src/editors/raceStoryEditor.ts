@@ -8,6 +8,10 @@ import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
 import { AssetBundle } from '../unityPy/classes/assetBundle';
 import { Proxify } from '../pythonInterop';
+import path from 'path';
+import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
+import acb from '../criCodecs/acb';
+import fs from 'fs/promises';
 
 export class RaceStoryEditorProvider extends EditorBase implements vscode.CustomTextEditorProvider {
     static readonly viewType = 'zokuzoku.raceStoryEditor';
@@ -51,7 +55,10 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         }
         
         // Init webview
-        this.setupWebview(webviewPanel);
+        let assetInfo = RaceStoryEditorProvider.parseFilename(document.uri);
+        this.setupWebview(webviewPanel, [
+            vscode.Uri.file(assetInfo.voiceCacheDir)
+        ]);
 
         // Messaging setup
         function postMessage(message: ControllerMessage) {
@@ -59,7 +66,8 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         }
 
         let prevEditPromise = Promise.resolve();
-        let nodesPromise = RaceStoryEditorProvider.generateNodes(document.uri);
+        let nodesPromise = RaceStoryEditorProvider.generateNodes(assetInfo);
+        let loadVoicePromise: Promise<{[key: string]: string}> | undefined;
         webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
             switch (message.type) {
                 case "init":
@@ -68,6 +76,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                     initReadPromise.finally(() => {
                         nodesPromise.then(nodes => {
                             postMessage({ type: "setNodes", nodes });
+                            postMessage({ type: "enableVoicePlayer" });
                         })
                         .catch(e => vscode.window.showErrorMessage("" + e));
                     });
@@ -118,12 +127,47 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                     });
                     break;
                 }
+
+                case "loadVoice":
+                    if (!loadVoicePromise) {
+                        loadVoicePromise = new Promise(async (resolve, reject) => {
+                            const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
+                            if (!hash) {
+                                return reject(new Error("Voice data is not available for this story"));
+                            }
+                            const acbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            vscode.window.withProgress({
+                                location: vscode.ProgressLocation.Notification,
+                                title: "Decoding audio..."
+                            }, async () => {
+                                try {
+                                    const paths = await acb.decodeToWavFiles(acbPath, HCA_KEY, assetInfo.voiceCacheDir);
+                                    const uris = Object.fromEntries(paths.map((v, i) => [
+                                        i.toString(),
+                                        webviewPanel.webview.asWebviewUri(vscode.Uri.file(v)).toString()
+                                    ]));
+                                    resolve(uris);
+                                }
+                                catch (e) {
+                                    reject(e);
+                                }
+                            });
+                        });
+                    }
+                    loadVoicePromise
+                    .then(uris => postMessage({ type: "loadVoice", uris }))
+                    .catch(e => vscode.window.showErrorMessage("" + e));
+                    break;
             }
         });
+
+        // Always try to clean up voice cache, regardless if voice was loaded in *this session*
+        this.disposables.push(new vscode.Disposable(() => {
+            return fs.rm(assetInfo.voiceCacheDir, { recursive: true, force: true });
+        }));
     }
 
-    static async generateNodes(uri: vscode.Uri): Promise<ITreeNode[]> {
-        // Parse filename
+    static parseFilename(uri: vscode.Uri): RaceStoryAssetInfo {
         const pathSplit = uri.path.split("/");
         const filename = pathSplit.at(-1);
         const matches = filename?.match(/^(storyrace_\d{9})\.json$/);
@@ -132,8 +176,19 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
             throw new Error("Failed to parse asset name from filename");
         }
 
+        return {
+            assetBundleName: `race/storyrace/text/${assetName}`,
+            assetName,
+            voiceAssetName: `sound/s/snd_voi_${assetName}.acb`,
+            voiceCacheDir: path.join(ZOKUZOKU_DIR, "cache", `snd_voi_${assetName}`)
+        }
+    }
+
+    static async generateNodes(info: RaceStoryAssetInfo): Promise<ITreeNode[]> {
+        const { assetBundleName, assetName } = info;
+
         // Read the asset
-        const env = await assetHelper.loadBundle(`race/storyrace/text/${assetName}`);
+        const env = await assetHelper.loadBundle(assetBundleName);
         const objects = env.objects;
         if (!objects.length) {
             throw new Error("Failed to load asset bundle");
@@ -185,4 +240,11 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
     protected override getHtmlForWebview(webview: vscode.Webview): string {
         return getEditorHtml(this.context.extensionUri, webview, "commonEditor", "Race Story Editor");
     }
+}
+
+interface RaceStoryAssetInfo {
+    assetBundleName: string;
+    assetName: string;
+    voiceAssetName: string;
+    voiceCacheDir: string;
 }
