@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import copy from 'esbuild-plugin-copy';
 import fs from "fs/promises";
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -18,7 +19,12 @@ await esbuild.build({
     alias: {
         '@mapbox/node-pre-gyp': resolve(__dirname, 'node-pre-gyp.js')
     },
-    banner: {
-        js: 'const __BUNDLED__ = true;',
-    }
+    plugins: [
+        copy({
+            assets: {
+                from: ['./node_modules/cricodecs/hca-wasm/pkg/hca_wasm_bg.wasm'],
+                to: ['.'],
+            }
+        })
+    ]
 });
