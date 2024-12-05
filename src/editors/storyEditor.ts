@@ -12,7 +12,7 @@ import { PPtr } from '../unityPy/classes/pPtr';
 import { ObjectBase } from '../unityPy/classes';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import path from 'path';
-import afs2 from '../criCodecs/afs2';
+import { AFS2 } from 'cricodecs';
 import fs from 'fs/promises';
 import { pathExists } from '../core/utils';
 
@@ -317,10 +317,16 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             const awbPath = await assetHelper.loadGenericAssetByHash(hash);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
-                                title: "Decoding audio..."
-                            }, async () => {
+                                title: "Decoding audio"
+                            }, async progress => {
                                 try {
-                                    const paths = await afs2.decodeToWavFiles(awbPath, HCA_KEY, assetInfo.voiceCacheDir);
+                                    const awb = await AFS2.fromFile(awbPath);
+                                    const paths = await awb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
+                                        progress.report({
+                                            message: `${current}/${total}`,
+                                            increment: current ? (1 / total) * 100 : 0
+                                        });
+                                    });
                                     const uris = Object.fromEntries(data.voiceCues.map(([id, cueId]) => [
                                         id, webviewPanel.webview.asWebviewUri(vscode.Uri.file(paths[cueId])).toString()
                                     ]));

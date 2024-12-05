@@ -10,7 +10,7 @@ import { AssetBundle } from '../unityPy/classes/assetBundle';
 import { Proxify } from '../pythonInterop';
 import path from 'path';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
-import acb from '../criCodecs/acb';
+import { ACB } from "cricodecs";
 import fs from 'fs/promises';
 import { pathExists } from '../core/utils';
 
@@ -139,10 +139,16 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                             const acbPath = await assetHelper.loadGenericAssetByHash(hash);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
-                                title: "Decoding audio..."
-                            }, async () => {
+                                title: "Decoding audio"
+                            }, async progress => {
                                 try {
-                                    const paths = await acb.decodeToWavFiles(acbPath, HCA_KEY, assetInfo.voiceCacheDir);
+                                    const acb = await ACB.fromFile(acbPath);
+                                    const paths = await acb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
+                                        progress.report({
+                                            message: `${current}/${total}`,
+                                            increment: current ? (1 / total) * 100 : 0
+                                        });
+                                    });
                                     const uris = Object.fromEntries(paths.map((v, i) => [
                                         i.toString(),
                                         webviewPanel.webview.asWebviewUri(vscode.Uri.file(v)).toString()
