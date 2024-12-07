@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       cricodecs:
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^1.0.2
+        version: 1.0.2
       csv-parse:
         specifier: ^5.5.5
         version: 5.5.5
@@ -727,8 +727,8 @@ packages:
   console-control-strings@1.1.0:
     resolution: {integrity: sha512-ty/fTekppD2fIwRvnZAVdeOiGd1c7YXEixbgJTNzqcxJWKQnjJ/V1bNEEE6hygpM3WjwHFUVK6HTjWSzV4a8sQ==}
 
-  cricodecs@1.0.1:
-    resolution: {integrity: sha512-qj//8aPOwdgXkxRnuaXxfzVsOAJX3Yf42DiehV9SakdGWzAKRhOHBJMc6QQA/EIXvB9EK0jGwUWWK7UDeigiSQ==}
+  cricodecs@1.0.2:
+    resolution: {integrity: sha512-w02jXUUm6f4FLg3qRXHF1//359lZhZ0G/c8eyNP0cB4p7hcqDiPBthWUYMLLNa8JhL4c2PAc2RsF5Q9n0lEshA==}
     engines: {node: '>= 18.0.0'}
 
   cross-spawn@6.0.5:
@@ -2739,7 +2739,7 @@ snapshots:
 
   console-control-strings@1.1.0: {}
 
-  cricodecs@1.0.1: {}
+  cricodecs@1.0.2: {}
 
   cross-spawn@6.0.5:
     dependencies:
