@@ -154,7 +154,8 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         const data: [string, string][] = parseCsv(lyricsAsset.script.toJS(), {
             encoding: "utf8",
             from: 2,
-            relax_column_count_more: true // some files have an extra delim at the end for some reason
+            relax_column_count_more: true, // some files have an extra delim at the end for some reason
+            skip_empty_lines: true
         });
 
         const nodes: IEntryTreeNode[] = [];
