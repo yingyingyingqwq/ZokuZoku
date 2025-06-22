@@ -127,7 +127,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             try {
                 const applied = await json.applyEdit(edit);
                 if (!applied) {
-                    vscode.window.showErrorMessage("Failed to apply edit");
+                    vscode.window.showErrorMessage(vscode.l10n.t("Failed to apply edit"));
                 }
             }
             catch (e) {
@@ -170,7 +170,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             }
             switch (message.type) {
                 case "init":
-                    postMessage({ type: "setExplorerTitle", title: "Story" });
+                    postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Story") });
                     initReadPromise.finally(async () => {
                         let noWrap = false;
                         if (json.ast.type === "Object") {
@@ -191,7 +191,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                         });
                         postMessage({ type: "setNodes", nodes: data.nodes });
                         if (data.title) {
-                            postMessage({ type: "setExplorerTitle", title: "Story: " + data.title });
+                            postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Story: {0}", {0: data.title}) });
                         }
                     });
                     fontHelper.onInit(webviewPanel.webview);
@@ -229,7 +229,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
                         let blockIndex = +key;
                         let ranges = data.contentRanges[blockIndex];
-                        if (!ranges) { return; } // also validates the index
+                        if (!ranges) { return; }
 
                         if (json.ast.type !== "Object") { return; }
                         let textBlockList = json.astObjectsProps.get(json.ast)?.text_block_list?.value;
@@ -255,7 +255,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             if (isChoiceData || ranges.colorTextInfoList.contains(index)) {
                                 const textBlock = textBlockList.children[blockIndex];
                                 if (!textBlock || textBlock.type !== "Object") {
-                                    return vscode.window.showErrorMessage("Invalid text block dict at index " + blockIndex);
+                                    return vscode.window.showErrorMessage(vscode.l10n.t("Invalid text block dict at index {0}", {0: blockIndex}));
                                 }
 
                                 const arrayName = isChoiceData ? "choice_data_list" : "color_text_info_list";
@@ -275,7 +275,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                                         };
                                     }
                                     else {
-                                        return vscode.window.showErrorMessage("Attempted to clear nonexistent list entry");
+                                        return vscode.window.showErrorMessage(vscode.l10n.t("Attempted to clear nonexistent list entry"));
                                     }
                                 }
                                 else {
@@ -291,7 +291,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                                 };
                             }
                             else {
-                                return vscode.window.showErrorMessage("Invalid text slot");
+                                return vscode.window.showErrorMessage(vscode.l10n.t("Invalid text slot"));
                             }
                         }
 
@@ -312,12 +312,12 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                         loadVoicePromise = new Promise(async (resolve, reject) => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
-                                return reject(new Error("Voice data is not available for this story"));
+                                return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
                             }
                             const awbPath = await assetHelper.loadGenericAssetByHash(hash);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
-                                title: "Decoding audio"
+                                title: vscode.l10n.t("Decoding audio")
                             }, async progress => {
                                 try {
                                     const awb = await AFS2.fromFile(awbPath);
@@ -345,7 +345,6 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             }
         });
 
-        // Always try to clean up voice cache, regardless if voice was loaded in *this session*
         this.disposables.push(new vscode.Disposable(() => {
             return fs.rm(assetInfo.voiceCacheDir, { recursive: true, force: true });
         }));
@@ -355,7 +354,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         const pathSplit = uri.path.split("/");
         const filename = pathSplit.at(-1);
         if (!filename) {
-            throw new Error("Failed to parse filename");
+            throw new Error(vscode.l10n.t("Failed to parse filename"));
         }
 
         let assetBundleName: string;
@@ -375,7 +374,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             voiceCacheDir = path.join(ZOKUZOKU_DIR, "cache", `snd_voi_story_${matches[2]}`);
         }
         else {
-            throw new Error("Failed to parse filename");
+            throw new Error(vscode.l10n.t("Failed to parse filename"));
         }
 
         return {
@@ -393,7 +392,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         const env = await assetHelper.loadBundle(assetBundleName);
         const objects = env.objects;
         if (!objects.length) {
-            throw new Error("Failed to load asset bundle");
+            throw new Error(vscode.l10n.t("Failed to load asset bundle"));
         }
         let assetBundle: Proxify<AssetBundle> | undefined;
         for (const obj of objects) {
@@ -403,11 +402,11 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             }
         }
         if (!assetBundle) {
-            throw new Error("Failed to find asset bundle object");
+            throw new Error(vscode.l10n.t("Failed to find asset bundle object"));
         }
         let assetInfo = assetBundle.m_Container.item(assetName);
         if (!assetInfo) {
-            throw new Error("Failed to find timeline data asset");
+            throw new Error(vscode.l10n.t("Failed to find timeline data asset"));
         }
         let timelineData = assetInfo.asset.get_obj().read(false).type_tree;
 
@@ -418,7 +417,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             nodes.push({
                 type: "entry",
                 id: "title",
-                name: "Title",
+                name: vscode.l10n.t("Title"),
                 icon: "whole-word",
                 content: [{ content: title }],
                 next: 0
@@ -442,7 +441,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     userData: {
                         type: StoryTextSlotType.Name
                     },
-                    tooltip: "Name"
+                    tooltip: vscode.l10n.t("Name")
                 },
                 {
                     content: textClip.Text.toJS(),
@@ -450,7 +449,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     userData: {
                         type: StoryTextSlotType.Content
                     },
-                    tooltip: "Content"
+                    tooltip: vscode.l10n.t("Content")
                 }
             ];
 
@@ -461,17 +460,17 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 let gender: "male" | "female" | undefined;
                 switch (choiceData.DifferenceFlag.toJS()) {
                     case DifferenceFlag.GenderMale:
-                        tooltip = "Male trainer choice";
+                        tooltip = vscode.l10n.t("Male trainer choice");
                         gender = "male";
                         break;
                     
                     case DifferenceFlag.GenderFemale:
-                        tooltip = "Female trainer choice";
+                        tooltip = vscode.l10n.t("Female trainer choice");
                         gender = "female";
                         break;
                     
                     default:
-                        tooltip = "Choice";
+                        tooltip = vscode.l10n.t("Choice");
                         break;
                 }
 
@@ -495,7 +494,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     userData: {
                         type: StoryTextSlotType.ColorText
                     },
-                    tooltip: "Color text"
+                    tooltip: vscode.l10n.t("Color text")
                 });
                 ++end;
             }
@@ -529,13 +528,13 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             let cueOffset = 0;
             switch (differenceFlag) {
                 case DifferenceFlag.GenderMale:
-                    name += " (male trainer)";
+                    name += ` (${vscode.l10n.t("male trainer")})`;
                     updatePrevMaleNode();
                     cueOffset = 1;
                     break;
 
                 case DifferenceFlag.GenderFemale:
-                    name += " (female trainer)";
+                    name += ` (${vscode.l10n.t("female trainer")})`;
                     updatePrevFemaleNode();
                     break;
                 

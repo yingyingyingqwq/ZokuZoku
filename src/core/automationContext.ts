@@ -15,11 +15,11 @@ function zk() {
     function getFullPath(relPath: string) {
         const localizedDataDir = LocalizedDataManager.instance?.dirUri.fsPath;
         if (!localizedDataDir) {
-            throw new Error("ZokuZoku has not been activated");
+            throw new Error(vscode.l10n.t('ZokuZoku has not been activated'));
         }
         const fullPath = path.join(localizedDataDir, relPath);
         if (fullPath[localizedDataDir.length] !== path.sep || !fullPath.startsWith(localizedDataDir)) {
-            throw new Error("Invalid file path");
+            throw new Error(vscode.l10n.t('Invalid file path'));
         }
         return fullPath;
     }
@@ -27,7 +27,7 @@ function zk() {
     function getDictFullPath(relPath: string) {
         const fullPath = getFullPath(relPath);
         if (!fullPath.endsWith(".json")) {
-            throw new Error("Invalid file path");
+            throw new Error(vscode.l10n.t('Invalid file path'));
         }
         return fullPath;
     }

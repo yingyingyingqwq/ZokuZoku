@@ -63,7 +63,10 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
             switch (message.type) {
                 case "init":
-                    postMessage({ type: "setExplorerTitle", title: "Lyrics" });
+                    postMessage({
+                        type: "setExplorerTitle",
+                        title: vscode.l10n.t('Lyrics')
+                    });
                     // Just making sure to prevent data races
                     initReadPromise.finally(() => {
                         nodesPromise.then(nodes => {
@@ -106,7 +109,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
                                 makeEditForStringProperty(key, message.content)
                             );
                             if (!applied) {
-                                vscode.window.showErrorMessage("Failed to apply edit");
+                                vscode.window.showErrorMessage(
+                                    vscode.l10n.t('Failed to apply edit')
+                                );
                             }
                         }
                         catch (e) {
@@ -126,7 +131,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         const matches = filename?.match(/^(m\d{4})(_lyrics\.json)$/);
         const musicId = matches?.[1];
         if (!musicId) {
-            throw new Error("Failed to parse song index from filename");
+            throw new Error(
+                vscode.l10n.t('Failed to parse song index from filename')
+            );
         }
 
         // Read the lyrics asset
@@ -134,7 +141,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         const env = await assetHelper.loadBundle(`live/musicscores/${musicId}/${lyricsAssetName}`);
         const objects = env.objects;
         if (!objects.length) {
-            throw new Error("Failed to load asset bundle");
+            throw new Error(
+                vscode.l10n.t('Failed to load asset bundle')
+            );
         }
         let lyricsAsset: Proxify<TextAsset> | undefined;
         for (const obj of objects) {
@@ -147,7 +156,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
             }
         }
         if (!lyricsAsset) {
-            throw new Error("Failed to find lyrics asset in bundle");
+            throw new Error(
+                vscode.l10n.t('Failed to find lyrics asset in bundle')
+            );
         }
 
         // Create nodes from data
@@ -184,6 +195,11 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
     }
 
     protected override getHtmlForWebview(webview: vscode.Webview): string {
-        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", "Lyrics Editor");
+        return getEditorHtml(
+            this.context.extensionUri,
+            webview,
+            "commonEditor",
+            vscode.l10n.t('Lyrics Editor')
+        );
     }
 }

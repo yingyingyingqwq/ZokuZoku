@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import SQLite from "../sqlite";
 import { UnityPyEnv } from "../unityPy/environment";
 import path from "path";
@@ -19,14 +20,17 @@ async function loadBundle(name: string): Promise<UnityPyEnv> {
         return loadBundleByHash(hash);
     }
     else {
-        throw new Error("Failed to resolve asset bundle with name: " + name);
+        throw new Error(vscode.l10n.t('Failed to resolve asset bundle with name: {0}',
+            {0: name}
+        ));
     }
 }
 
 function getAssetPath(hash: string) {
     let gameDataDir = config().get<string>("gameDataDir");
     if (!gameDataDir) {
-        throw new Error("Attempted to load an asset file, but the game data directory is not set");
+        throw new Error(vscode.l10n.t(
+            'Attempted to load an asset file, but the game data directory is not set'));
     }
 
     let assetDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
@@ -50,17 +54,25 @@ async function loadBundleByHash(hash: string): Promise<UnityPyEnv> {
     if (!exists) {
         let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
         if (!autoDownloadBundles) {
-            throw new Error("Asset bundle not found: " + hash);
+            throw new Error(vscode.l10n.t('Asset bundle not found: {0}',
+                {0: hash}
+            ));
         }
 
         let platform = await getMetaPlatform();
         if (!platform) {
-            throw new Error("Failed to detect platform of meta database");
+            throw new Error(vscode.l10n.t(
+                'Failed to detect platform of meta database'));
         }
 
         let downloadUrl = getBundleDownloadUrl(platform, hash);
         await fs.mkdir(assetDir, { recursive: true });
-        await downloader.downloadToFile(downloadUrl, "Downloading asset bundle: " + hash, assetPath, true);
+        await downloader.downloadToFile(
+            downloadUrl,
+            vscode.l10n.t('Downloading asset bundle: {0}', {0: hash}),
+            assetPath,
+            true
+        );
     }
 
     return UnityPy.load(assetPath);
@@ -83,7 +95,10 @@ async function loadGenericAsset(name: string): Promise<string> {
         return loadGenericAssetByHash(hash);
     }
     else {
-        throw new Error("Failed to resolve generic asset with name: " + name);
+        throw new Error(vscode.l10n.t(
+            'Failed to resolve generic asset with name: {0}',
+            {0: name}
+        ));
     }
 }
 
@@ -98,12 +113,20 @@ async function loadGenericAssetByHash(hash: string): Promise<string> {
 
     let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
     if (!autoDownloadBundles) {
-        throw new Error("Asset not found: " + hash);
+        throw new Error(vscode.l10n.t(
+            'Asset not found: {0}',
+            {0: hash}
+        ));
     }
 
     let downloadUrl = getGenericDownloadUrl(hash);
     await fs.mkdir(assetDir, { recursive: true });
-    await downloader.downloadToFile(downloadUrl, "Downloading generic asset: " + hash, assetPath, true);
+    await downloader.downloadToFile(
+        downloadUrl,
+        vscode.l10n.t('Downloading generic asset: {0}', {0: hash}),
+        assetPath,
+        true
+    );
 
     return assetPath;
 }

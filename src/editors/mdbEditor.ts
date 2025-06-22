@@ -185,7 +185,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
                         try {
                             let applied = await editPromise;
                             if (!applied) {
-                                vscode.window.showErrorMessage("Failed to apply edit");
+                                vscode.window.showErrorMessage(vscode.l10n.t('Failed to apply edit'));
                             }
                         }
                         catch (e) {
@@ -261,7 +261,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
             return tableName;
         }
         else {
-            throw new Error("MDB Editor was launched externally, failed to infer table name from filename");
+            throw new Error(vscode.l10n.t('MDB Editor was launched externally, failed to infer table name from filename'));
         }
     }
 
@@ -331,7 +331,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
     }
 
     protected override getHtmlForWebview(webview: vscode.Webview): string {
-        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", "Lyrics Editor");
+        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", vscode.l10n.t('Lyrics Editor'));
     }
 }
 

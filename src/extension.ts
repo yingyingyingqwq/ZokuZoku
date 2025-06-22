@@ -10,6 +10,12 @@ import { getGameInstallPath } from './core/utils';
 import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
 import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
+
+const YES = vscode.l10n.t('Yes');
+const NO = vscode.l10n.t('No');
+const OK = vscode.l10n.t('OK');
+const CANCEL = vscode.l10n.t('Cancel');
+
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
 
@@ -28,11 +34,17 @@ async function installPymport() {
     await fs.mkdir(PYMPORT_DIR, { recursive: true });
     const downloadUrl = `https://github.com/mmomtchev/pymport/releases/download/${PYMPORT_VER}/${os.platform()}-x64.tar.gz`;
     const downloadPath = path.join(ZOKUZOKU_DIR, "tmp.tar.gz");
-    await downloader.downloadToFile(downloadUrl, "Downloading pymport " + PYMPORT_VER, downloadPath, true);
+    await downloader.downloadToFile(
+        downloadUrl,
+        vscode.l10n.t('Downloading pymport {0}', {0: PYMPORT_VER}
+        ),
+        downloadPath,
+        true
+    );
 
     const progressOptions = {
         location: vscode.ProgressLocation.Notification,
-        title: "Installing pymport..."
+        title: vscode.l10n.t('Installing pymport...')
     };
     await vscode.window.withProgress(progressOptions, async () => {
         await tar.x({
@@ -63,7 +75,7 @@ async function installUnityPy() {
         await fs.stat(python);
     }
     catch {
-        throw new Error("Python binary not found in pymport install dir");
+        throw new Error(vscode.l10n.t('Python binary not found in pymport install dir'));
     }
 
     const pip = spawn(python, ['-m', 'pip', 'install', 'UnityPy==' + UNITYPY_VER, '--force-reinstall'], {
@@ -76,7 +88,7 @@ async function installUnityPy() {
 
     const progressOptions = {
         location: vscode.ProgressLocation.Notification,
-        title: "Installing UnityPy..."
+        title: vscode.l10n.t('Installing UnityPy...')
     };
     await vscode.window.withProgress(progressOptions, () => {
         return new Promise<void>((resolve, reject) => {
@@ -88,13 +100,13 @@ async function installUnityPy() {
                     resolve();
                     return;
                 }
-                reject(new Error("Python pip process exited with code " + code));
+                reject(new Error(vscode.l10n.t('Python pip process exited with code {0}', {0: code})));
             });
         });
     });
 
     if (await checkUnityPy() === false) {
-        throw new Error("Failed to verify UnityPy installation.");
+        throw new Error(vscode.l10n.t('Failed to verify UnityPy installation.'));
     }
 }
 
@@ -116,16 +128,16 @@ async function checkGameDataDir() {
 
     if (found) {
         let res = await vscode.window.showWarningMessage(
-            `The game data directory has not been set. Would you like to set it to "${USER_GAME_DATA_DIR}"?`,
-            "Yes", "No"
+            vscode.l10n.t('The game data directory has not been set. Would you like to set it to "{0}"?', {0: USER_GAME_DATA_DIR}),
+            YES, NO
         );
-        if (res === "Yes") {
+        if (res === YES) {
             await config().update("gameDataDir", USER_GAME_DATA_DIR, true);
         }
     }
     else {
         vscode.window.showWarningMessage(
-            "The game data directory has not been set and was not automatically detected. Please set it manually in Settings."
+            vscode.l10n.t('The game data directory has not been set and was not automatically detected. Please set it manually in Settings.')
         );
     }
 }
@@ -147,16 +159,16 @@ async function checkLocalizeDictDump() {
 
     if (dumpPath) {
         let res = await vscode.window.showWarningMessage(
-            `The localize dict dump path has not been set. Would you like to set it to "${dumpPath}"?`,
-            "Yes", "No"
+            vscode.l10n.t('The localize dict dump path has not been set. Would you like to set it to "{0}"?', {0: dumpPath}),
+            YES, NO
         );
-        if (res === "Yes") {
+        if (res === YES) {
             await config().update("localizeDictDump", dumpPath, true);
         }
     }
     else {
         vscode.window.showWarningMessage(
-            "The localize dict dump path has not been set and was not automatically detected. Please set it manually in Settings."
+            vscode.l10n.t('The localize dict dump path has not been set and was not automatically detected. Please set it manually in Settings.')
         );
         return;
     }
@@ -181,9 +193,12 @@ async function checkEnabled() {
     }
     else {
         setActive(false);
-        vscode.window.showInformationMessage("Would you like to enable ZokuZoku for this workspace?", "Yes", "No")
+        vscode.window.showInformationMessage(
+            vscode.l10n.t('Would you like to enable ZokuZoku for this workspace?'),
+            YES, NO
+        )
         .then(res => {
-            if (res === "Yes") {
+            if (res === YES) {
                 config().update("enabled", true, false);
                 setActive(true);
             }
@@ -198,16 +213,19 @@ export async function activate(context: vscode.ExtensionContext) {
     const unityPyInstalled = pyInstalled ? await checkUnityPy() : false;
     if (!pyInstalled || !unityPyInstalled) {
         const res = await vscode.window.showInformationMessage(
-            "ZokuZoku needs to install some dependencies before it can be used.", "OK", "Cancel"
+            vscode.l10n.t('ZokuZoku needs to install some dependencies before it can be used.'),
+            OK, CANCEL
         );
-        if (res === "Cancel") {
+        if (res === CANCEL) {
             return;
         }
 
         try {
             if (!pyInstalled) { await installPymport(); }
             if (!unityPyInstalled) { await installUnityPy(); }
-            vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
+            vscode.window.showInformationMessage(
+                vscode.l10n.t('ZokuZoku\'s dependencies have been installed to "{0}"', {0: ZOKUZOKU_DIR})
+            );
         }
         catch (e) {
             vscode.window.showErrorMessage("" + e);

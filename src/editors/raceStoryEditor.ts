@@ -72,7 +72,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             switch (message.type) {
                 case "init":
-                    postMessage({ type: "setExplorerTitle", title: "Race Story" });
+                    postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Race Story") });
                     // Just making sure to prevent data races
                     initReadPromise.finally(() => {
                         nodesPromise.then(nodes => {
@@ -113,13 +113,13 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                     prevEditPromise = prevEditPromise.then(async () => {
                         try {
                             if (json.ast.type !== "Array") {
-                                throw new Error("Root node is not an array");
+                                throw new Error(vscode.l10n.t("Root node is not an array"));
                             }
                             const applied = await json.applyEdit(
                                 makeEditForArray(json.ast, "", key, message.content)
                             );
                             if (!applied) {
-                                vscode.window.showErrorMessage("Failed to apply edit");
+                                vscode.window.showErrorMessage(vscode.l10n.t("Failed to apply edit"));
                             }
                         }
                         catch (e) {
@@ -134,12 +134,12 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                         loadVoicePromise = new Promise(async (resolve, reject) => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
-                                return reject(new Error("Voice data is not available for this story"));
+                                return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
                             }
                             const acbPath = await assetHelper.loadGenericAssetByHash(hash);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
-                                title: "Decoding audio"
+                                title: vscode.l10n.t("Decoding audio")
                             }, async progress => {
                                 try {
                                     const acb = await ACB.fromFile(acbPath);
@@ -180,7 +180,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         const matches = filename?.match(/^(storyrace_\d{9})\.json$/);
         const assetName = matches?.[1];
         if (!assetName) {
-            throw new Error("Failed to parse asset name from filename");
+            throw new Error(vscode.l10n.t("Failed to parse asset name from filename"));
         }
 
         return {
@@ -198,7 +198,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         const env = await assetHelper.loadBundle(assetBundleName);
         const objects = env.objects;
         if (!objects.length) {
-            throw new Error("Failed to load asset bundle");
+            throw new Error(vscode.l10n.t("Failed to load asset bundle"));
         }
         let assetBundle: Proxify<AssetBundle> | undefined;
         for (const obj of objects) {
@@ -208,13 +208,13 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
             }
         }
         if (!assetBundle) {
-            throw new Error("Failed to find asset bundle object");
+            throw new Error(vscode.l10n.t("Failed to find asset bundle object"));
         }
         let assetInfo = assetBundle.m_Container.item(
             `assets/_gallopresources/bundle/resources/race/storyrace/text/${assetName}.asset`
         );
         if (!assetInfo) {
-            throw new Error("Failed to find text asset");
+            throw new Error(vscode.l10n.t("Failed to find text asset"));
         }
         let textAsset = assetInfo.asset.get_obj().read(false);
         let textData = textAsset.type_tree.item("textData") as Proxify<{ text: string }[]>;
