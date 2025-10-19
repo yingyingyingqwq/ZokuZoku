@@ -286,6 +286,17 @@
           "default": "127.0.0.1",
           "scope": "machine",
           "description": "The Hachimi IPC address to connect to (not including the port). By default, it connects to Hachimi running on your local machine. To use a remote device, enable IPC and \"IPC listen all\" in Hachimi, and set the address to the remote device's address."
+        },
+        "zokuzoku.decryption.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable decryption for encrypted 'meta' database and asset bundles. Requires a custom build of Python with apsw-sqlite3mc."
+        },
+        "zokuzoku.decryption.metaKey": {
+          "type": "string",
+          "default": "",
+          "description": "The decryption key (hex string) for the 'meta' database. If left empty, a default key will be used.",
+          "format": "password"
         }
       }
     }

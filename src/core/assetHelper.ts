@@ -1,10 +1,10 @@
 import SQLite from "../sqlite";
-import { UnityPyEnv } from "../unityPy/environment";
 import path from "path";
 import fs from "fs/promises";
 import downloader from "./downloader";
-import UnityPy from "../unityPy";
 import config from "../config";
+import { loadBundle as loadBundleViaBridge } from '../pythonBridge';
+import { resolve as resolvePath } from 'path';
 
 async function getAssetHash(name: string) {
     let sqlite = SQLite.instance;
@@ -13,14 +13,12 @@ async function getAssetHash(name: string) {
     return queryRes.at(0)?.rows.at(0)?.at(0);
 }
 
-async function loadBundle(name: string): Promise<UnityPyEnv> {
-    let hash = await getAssetHash(name);
-    if (hash) {
-        return loadBundleByHash(hash);
+async function loadBundle(assetBundleName: string) {
+    const hash = await getAssetHash(assetBundleName);
+    if (!hash) {
+        throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
     }
-    else {
-        throw new Error("Failed to resolve asset bundle with name: " + name);
-    }
+    return loadBundleByHash(hash);
 }
 
 function getAssetPath(hash: string) {
@@ -36,34 +34,27 @@ function getAssetPath(hash: string) {
     };
 }
 
-async function loadBundleByHash(hash: string): Promise<UnityPyEnv> {
-    let { assetDir, assetPath } = getAssetPath(hash);
-    let exists: boolean;
-    try {
-        await fs.stat(assetPath);
-        exists = true;
-    }
-    catch {
-        exists = false;
-    }
+async function loadBundleByHash(hash: string) {
+    const { assetPath } = getAssetPath(hash);
+    const useDecryption = config().get<boolean>("decryption.enabled");
+    const metaPath = SQLite.instance.getMetaPath();
+    const metaKey = config().get<string>("decryption.metaKey");
 
-    if (!exists) {
-        let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
-        if (!autoDownloadBundles) {
-            throw new Error("Asset bundle not found: " + hash);
-        }
-
-        let platform = await getMetaPlatform();
-        if (!platform) {
-            throw new Error("Failed to detect platform of meta database");
-        }
-
-        let downloadUrl = getBundleDownloadUrl(platform, hash);
-        await fs.mkdir(assetDir, { recursive: true });
-        await downloader.downloadToFile(downloadUrl, "Downloading asset bundle: " + hash, assetPath, true);
+    if (useDecryption && !metaPath) {
+        throw new Error("Decryption is enabled, but the meta path is not set.");
     }
 
-    return UnityPy.load(assetPath);
+    const absoluteAssetPath = resolvePath(assetPath);
+    const absoluteMetaPath = metaPath ? resolvePath(metaPath) : '';
+
+    return await loadBundleViaBridge({
+        assetPath: absoluteAssetPath,
+        assetName: '',
+        useDecryption: useDecryption,
+        metaPath: absoluteMetaPath,
+        bundleHash: hash,
+        metaKey: metaKey
+    });
 }
 
 const META_PLATFORM_QUERY = `SELECT n FROM c WHERE n = '//Android' OR n = '//Windows'`;

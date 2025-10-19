@@ -9,8 +9,9 @@ import { workspace, window } from "vscode";
 import { ResultSet } from "./common";
 import { executeQuery, QueryExecutionOptions } from "./queryExecutor";
 import { validateSqliteCommand } from "./sqliteCommandValidation";
-import { join } from "path";
+import { join, resolve as resolvePath } from "path";
 import config from "../config";
+import { queryEncryptedDb } from '../pythonBridge';
 
 class SQLite {
     private extensionPath: string;
@@ -38,6 +39,10 @@ class SQLite {
         return this._instance!;
     }
 
+    getMetaPath(): string | undefined {
+        return this.metaPath;
+    }
+
     async query(dbPath: string, query: string, options?: QueryExecutionOptions): Promise<ResultSet> {
         if (!this.sqliteCommand) {
             throw new Error("Unable to execute query: provide a valid sqlite3 executable in the setting zokuzoku.sqlite3.");
@@ -57,11 +62,27 @@ class SQLite {
         return this.query(this.mdbPath, query, options);
     }
 
-    queryMeta(query: string, options?: QueryExecutionOptions): Promise<ResultSet> {
+    async queryMeta(query: string, options?: QueryExecutionOptions): Promise<ResultSet> {
         if (!this.metaPath) {
             throw new Error("Query cannot be performed because the game data directory is not set.");
         }
-        return this.query(this.metaPath, query, options);
+
+        const useDecryption = config().get<boolean>("decryption.enabled");
+        if (!useDecryption) {
+            return this.query(this.metaPath, query, options);
+        } else {
+            try {
+                const metaKey = config().get<string>("decryption.metaKey") ?? "";
+
+                const absoluteMetaPath = resolvePath(this.metaPath);
+
+                return await queryEncryptedDb(absoluteMetaPath, query, metaKey);
+            } catch (e) {
+                const err = e as Error;
+                window.showErrorMessage(`Failed to query encrypted meta DB: ${err.message}`);
+                throw err;
+            }
+        }
     }
 
     setSqliteCommand(sqliteCommand: string) {

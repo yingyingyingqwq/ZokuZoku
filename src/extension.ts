@@ -10,6 +10,9 @@ import { getGameInstallPath } from './core/utils';
 import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
 import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
+import { initPythonBridge, getUnityPyVersion } from './pythonBridge';
+import { UNITYPY_VER } from "./defines";
+import { APSW_VER } from "./defines";
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
 
@@ -47,10 +50,11 @@ async function installPymport() {
 
 async function checkUnityPy(): Promise<boolean> {
     try {
-        const { UnityPy } = await import("./unityPy/index.js");
-        return UnityPy.__version__.toJS() === UNITYPY_VER;
+        const versionResult = await getUnityPyVersion();
+        return versionResult.unitypy_version === UNITYPY_VER;
     }
     catch (e) {
+        console.error("checkUnityPy failed:", e);
         return false;
     }
 }
@@ -66,7 +70,7 @@ async function installUnityPy() {
         throw new Error("Python binary not found in pymport install dir");
     }
 
-    const pip = spawn(python, ['-m', 'pip', 'install', 'UnityPy==' + UNITYPY_VER, '--force-reinstall'], {
+    const pip = spawn(python, ['-m', 'pip', 'install', 'UnityPy==' + UNITYPY_VER, 'apsw-sqlite3mc==' + APSW_VER, '--force-reinstall'], {
         stdio: 'inherit',
         env: {
             ...process.env,
@@ -194,6 +198,9 @@ async function checkEnabled() {
 // note: vscode won't wait for this promise
 export async function activate(context: vscode.ExtensionContext) {
     SQLite.init(context.extensionPath);
+
+    initPythonBridge();
+
     const pyInstalled = await checkPymport();
     const unityPyInstalled = pyInstalled ? await checkUnityPy() : false;
     if (!pyInstalled || !unityPyInstalled) {
