@@ -117,20 +117,6 @@ export const MDB_TABLE_COLUMNS: {[K in MdbTableName]: string[]} = {
     "race_jikkyo_message": [ "id", "message" ]
 };
 
-
-export function buildQueryExecutionOptions(setupDatabaseConfig: { [dbPath: string]: { sql: string[]; } }, dbPath: string): QueryExecutionOptions {
-    if (!workspace.workspaceFolders) {
-        return { sql: [] };
-    }
-    for (let configDbPath in setupDatabaseConfig) {
-        if (join(workspace.workspaceFolders[0].uri.fsPath, configDbPath) === dbPath) {
-            let sql = setupDatabaseConfig[configDbPath].sql;
-            return { sql };
-        }
-    }
-    return { sql: [] };
-}
-
 export interface QueryResult {resultSet?: ResultSet; error?: Error; }
 
 export default SQLite;

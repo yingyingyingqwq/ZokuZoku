@@ -4,7 +4,12 @@ import config from '../config';
 import { ControllerMessage } from './sharedTypes';
 
 async function getGameFontUri() {
-    let assetPath = await assetHelper.loadGenericAsset("font/dynamic01.otf");
+    const fontHash = await assetHelper.getAssetHash("font/dynamic01.otf");
+    if (!fontHash) {
+        throw new Error("Could not find hash for game font asset.");
+    }
+
+    let assetPath = await assetHelper.ensureAssetDownloaded(fontHash, true);
     return vscode.Uri.file(assetPath);
 }
 

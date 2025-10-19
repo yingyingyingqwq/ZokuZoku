@@ -13,14 +13,6 @@ async function getAssetHash(name: string) {
     return queryRes.at(0)?.rows.at(0)?.at(0);
 }
 
-async function loadBundle(assetBundleName: string) {
-    const hash = await getAssetHash(assetBundleName);
-    if (!hash) {
-        throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
-    }
-    return loadBundleByHash(hash);
-}
-
 function getAssetPath(hash: string) {
     let gameDataDir = config().get<string>("gameDataDir");
     if (!gameDataDir) {
@@ -34,29 +26,6 @@ function getAssetPath(hash: string) {
     };
 }
 
-async function loadBundleByHash(hash: string) {
-    const { assetPath } = getAssetPath(hash);
-    const useDecryption = config().get<boolean>("decryption.enabled");
-    const metaPath = SQLite.instance.getMetaPath();
-    const metaKey = config().get<string>("decryption.metaKey");
-
-    if (useDecryption && !metaPath) {
-        throw new Error("Decryption is enabled, but the meta path is not set.");
-    }
-
-    const absoluteAssetPath = resolvePath(assetPath);
-    const absoluteMetaPath = metaPath ? resolvePath(metaPath) : '';
-
-    return await loadBundleViaBridge({
-        assetPath: absoluteAssetPath,
-        assetName: '',
-        useDecryption: useDecryption,
-        metaPath: absoluteMetaPath,
-        bundleHash: hash,
-        metaKey: metaKey
-    });
-}
-
 const META_PLATFORM_QUERY = `SELECT n FROM c WHERE n = '//Android' OR n = '//Windows'`;
 async function getMetaPlatform(): Promise<string | undefined> {
     let sqlite = SQLite.instance;
@@ -65,7 +34,7 @@ async function getMetaPlatform(): Promise<string | undefined> {
 }
 
 function getBundleDownloadUrl(platform: string, hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
+    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function loadGenericAsset(name: string): Promise<string> {
@@ -78,36 +47,47 @@ async function loadGenericAsset(name: string): Promise<string> {
     }
 }
 
-async function loadGenericAssetByHash(hash: string): Promise<string> {
-    let { assetDir, assetPath } = getAssetPath(hash);
+function getGenericDownloadUrl(hash: string) {
+    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
+}
+
+async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<string> {
+    const { assetDir, assetPath } = getAssetPath(hash);
+
     try {
         await fs.stat(assetPath);
         return assetPath;
-    }
-    catch {
+    } catch {
     }
 
-    let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
+    const autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
     if (!autoDownloadBundles) {
-        throw new Error("Asset not found: " + hash);
+        throw new Error(`Asset not found and auto-download is disabled: ${hash}`);
     }
 
-    let downloadUrl = getGenericDownloadUrl(hash);
+    let downloadUrl: string;
+    let assetType: string;
+
+    if (isGeneric) {
+        downloadUrl = getGenericDownloadUrl(hash);
+        assetType = "generic asset";
+    } else {
+        const platform = await getMetaPlatform();
+        if (!platform) {
+            throw new Error("Could not determine platform from meta DB to download asset bundle.");
+        }
+        downloadUrl = getBundleDownloadUrl(platform, hash);
+        assetType = "asset bundle";
+    }
+
     await fs.mkdir(assetDir, { recursive: true });
-    await downloader.downloadToFile(downloadUrl, "Downloading generic asset: " + hash, assetPath, true);
+    await downloader.downloadToFile(downloadUrl, `Downloading ${assetType}: ${hash}`, assetPath, true);
 
     return assetPath;
 }
 
-function getGenericDownloadUrl(hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
-}
-
 export default {
     getAssetHash,
-    loadBundle,
     getAssetPath,
-    loadBundleByHash,
-    loadGenericAsset,
-    loadGenericAssetByHash
+    ensureAssetDownloaded
 };

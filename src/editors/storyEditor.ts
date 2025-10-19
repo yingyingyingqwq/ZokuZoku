@@ -12,7 +12,6 @@ import fs from 'fs/promises';
 import { pathExists } from '../core/utils';
 import { extractStoryData } from '../pythonBridge';
 import { resolve as resolvePath } from 'path';
-import { extractStoryData } from '../pythonBridge';
 import config from '../config';
 import SQLite from '../sqlite';
 
@@ -314,7 +313,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             if (!hash) {
                                 return reject(new Error("Voice data is not available for this story"));
                             }
-                            const awbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            const awbPath = await assetHelper.ensureAssetDownloaded(hash, true);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: "Decoding audio"
@@ -394,7 +393,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         if (!hash) {
             throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
         }
-        const { assetPath } = assetHelper.getAssetPath(hash);
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
         const useDecryption = config().get<boolean>("decryption.enabled");
         const metaPath = SQLite.instance.getMetaPath();
@@ -632,36 +631,8 @@ class ContentRange {
     }
 }
 
-interface StoryTimelineBlockData {
-    TextTrack: StoryTimelineTextTrackData;
-}
-
-interface StoryTimelineTextTrackData {
-    ClipList: PPtr[];
-}
-
-interface StoryTimelineTextClipData extends ObjectBase {
-    Name: string;
-    Text: string;
-    ChoiceDataList: ChoiceData[];
-    ColorTextInfoList: ColorTextInfo[];
-    NextBlock: number;
-    DifferenceFlag: DifferenceFlag;
-    CueId: number;
-}
-
 enum DifferenceFlag {
     None = 0,
     GenderMale = 2,
     GenderFemale = 4
-}
-
-interface ChoiceData {
-    Text: string;
-    NextBlock: number;
-    DifferenceFlag: DifferenceFlag;
-}
-
-interface ColorTextInfo {
-    Text: string;
 }

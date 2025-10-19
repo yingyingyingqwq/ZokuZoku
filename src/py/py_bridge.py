@@ -2,9 +2,7 @@ import sys
 import json
 import apsw
 import UnityPy
-import io
 from pathlib import Path
-import os
 
 DB_KEY_DEFAULT = "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd"
 BUNDLE_BASE_KEY = "532b4631e4a7b9473e7cfb"
@@ -45,11 +43,6 @@ def _load_env_from_path(asset_path, params):
             else:
                 return UnityPy.load(data)
     return UnityPy.load(asset_path)
-
-
-def handle_load_bundle(params):
-    env = _load_env_from_path(params['asset_path'], params)
-    return {"success": True, "asset_count": len(env.objects)}
 
 def handle_extract_race_story_data(params):
     env = _load_env_from_path(params['asset_path'], params)
@@ -174,7 +167,6 @@ def main():
             "version": handle_version,
             "query_db": handle_query_db,
             "extract_story_data": handle_extract_story_data,
-            "load_bundle": handle_load_bundle,
             "extract_race_story_data": handle_extract_race_story_data,
             "extract_lyrics_data": handle_extract_lyrics_data,
         }

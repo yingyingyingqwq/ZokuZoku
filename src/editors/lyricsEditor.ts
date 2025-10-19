@@ -3,9 +3,6 @@ import { getEditorHtml, makeEditForStringProperty } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument } from '../core';
 import assetHelper from '../core/assetHelper';
-import { TextAsset } from '../unityPy/classes';
-import { ClassIDType } from '../unityPy/enums';
-import { Proxify } from '../pythonInterop';
 import { parse as parseCsv } from 'csv-parse/sync';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
@@ -139,7 +136,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         if (!hash) {
             throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
         }
-        const { assetPath } = assetHelper.getAssetPath(hash);
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
         const useDecryption = config().get<boolean>("decryption.enabled");
         const metaPath = SQLite.instance.getMetaPath();

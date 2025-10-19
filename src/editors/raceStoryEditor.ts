@@ -3,11 +3,8 @@ import { getEditorHtml, makeEditForArray } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument } from '../core';
 import assetHelper from '../core/assetHelper';
-import { ClassIDType } from '../unityPy/enums';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
-import { AssetBundle } from '../unityPy/classes/assetBundle';
-import { Proxify } from '../pythonInterop';
 import path from 'path';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import { ACB } from "cricodecs";
@@ -140,7 +137,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                             if (!hash) {
                                 return reject(new Error("Voice data is not available for this story"));
                             }
-                            const acbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            const acbPath = await await assetHelper.ensureAssetDownloaded(hash, true);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: "Decoding audio"
@@ -202,7 +199,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         if (!hash) {
             throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
         }
-        const { assetPath } = assetHelper.getAssetPath(hash);
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
         const useDecryption = config().get<boolean>("decryption.enabled");
         const metaPath = SQLite.instance.getMetaPath();
