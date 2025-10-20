@@ -92,10 +92,17 @@ def handle_query_db(params):
     db = apsw.Connection(conn_str, flags=apsw.SQLITE_OPEN_URI | apsw.SQLITE_OPEN_READONLY)
 
     cursor = db.cursor()
+    header = []
+    results = []
+
     with db:
         cursor.execute(query)
-        header = [desc[0] for desc in cursor.getdescription()]
         results = list(cursor)
+
+        description = cursor.getdescription()
+        if description:
+            header = [desc[0] for desc in description]
+
     db.close()
     rows = [[str(item) for item in row] for row in results]
     return {"header": header, "rows": rows}
