@@ -89,7 +89,6 @@ export function getStoryIdComponents(id: string | number): [string, string, stri
     id = normalizeStoryId(id);
     return [id.slice(0, 2), id.slice(2, 6), id.slice(6)];
 }
-
 async function queryRegistry(key: string, value: string): Promise<string | undefined> {
     return new Promise((resolve) => {
         try {
@@ -106,7 +105,8 @@ async function queryRegistry(key: string, value: string): Promise<string | undef
                 }
                 const match = output.match(new RegExp(`^\\s*${value}\\s+REG_SZ\\s+(.*)$`, 'im'));
                 if (match && match[1]) {
-                    resolve(match[1].trim());
+                    const resolvedPath = expandEnvironmentVariables(match[1].trim());
+                    resolve(resolvedPath);
                 } else {
                     resolve(undefined);
                 }
@@ -191,7 +191,12 @@ export async function updateHachimiConfig(callback: (config: any) => any) {
             await fs.writeFile(configPath, JSON.stringify(res, null, 2), { encoding: "utf8" });
         }
         return res;
-    } catch (e) {
+    } catch (e: any) {
+        if (e.code === 'ENOENT') {
+            console.warn(`hachimi/config.json not found at ${configPath}. Skipping update.`);
+            return;
+        }
+
         throw new Error(`Failed to read or update hachimi config at ${configPath}. Error: ${e}`);
     }
 }
