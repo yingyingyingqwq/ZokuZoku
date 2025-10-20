@@ -107,24 +107,38 @@ const GAME_DATA_FILES = [ "meta", path.join("master", "master.mdb") ];
 async function checkGameDataDir() {
     if (config().get("gameDataDir")) { return; }
 
-    let found = true;
-    for (const file of GAME_DATA_FILES) {
-        try {
-            await fs.stat(path.join(USER_GAME_DATA_DIR, file));
+    const potentialGameDataDirs = [
+        USER_GAME_DATA_DIR,
+        path.join(os.homedir(), "Umamusume", "umamusume_Data", "Persistent"),
+        "C:\\Program Files (x86)\\Steam\\steamapps\\common\\UmamusumePrettyDerby_Jpn\\UmamusumePrettyDerby_Jpn_Data\\Persistent"
+    ];
+
+    let foundPath: string | undefined;
+
+    for (const dir of potentialGameDataDirs) {
+        let found = true;
+        for (const file of GAME_DATA_FILES) {
+            try {
+                await fs.stat(path.join(dir, file));
+            }
+            catch {
+                found = false;
+                break;
+            }
         }
-        catch {
-            found = false;
+        if (found) {
+            foundPath = dir;
             break;
         }
     }
 
-    if (found) {
+    if (foundPath) {
         let res = await vscode.window.showWarningMessage(
-            `The game data directory has not been set. Would you like to set it to "${USER_GAME_DATA_DIR}"?`,
+            `The game data directory has not been set. Would you like to set it to "${foundPath}"?`,
             "Yes", "No"
         );
         if (res === "Yes") {
-            await config().update("gameDataDir", USER_GAME_DATA_DIR, true);
+            await config().update("gameDataDir", foundPath, true);
         }
     }
     else {
