@@ -165,23 +165,13 @@ export async function getGameInstallPath(): Promise<string | undefined> {
 }
 
 export async function updateHachimiConfig(callback: (config: any) => any) {
-    let hachimiDir: string | undefined;
+    const dumpPath = config().get<string>("localizeDictDump");
 
-    try {
-        const dumpPath = config().get<string>("localizeDictDump");
-        if (dumpPath) {
-            hachimiDir = path.dirname(dumpPath);
-        }
-    } catch {}
-
-    if (!hachimiDir) {
-        const installPath = await getGameInstallPath();
-        if (!installPath) {
-            throw new Error("Failed to find game install path and no localizeDictDump path is configured.");
-        }
-        hachimiDir = path.join(installPath, "hachimi");
+    if (!dumpPath) {
+        throw new Error("Cannot update Hachimi config: The 'Localize Dict Dump' path is not configured. Please run the setup or set it manually in Settings.");
     }
 
+    const hachimiDir = path.dirname(dumpPath);
     const configPath = path.join(hachimiDir, "config.json");
 
     try {
