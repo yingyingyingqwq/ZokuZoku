@@ -97,11 +97,13 @@ def handle_query_db(params):
 
     with db:
         cursor.execute(query)
-        results = list(cursor)
 
-        description = cursor.getdescription()
-        if description:
-            header = [desc[0] for desc in description]
+        try:
+            header = [desc[0] for desc in cursor.getdescription()]
+        except apsw.ExecutionCompleteError:
+            pass
+
+        results = list(cursor)
 
     db.close()
     rows = [[str(item) for item in row] for row in results]
