@@ -6,6 +6,7 @@ import textDataCategories from './mdbTextDataCategories';
 import SQLite, { MDB_TABLE_COLUMNS, MDB_TABLE_NAMES, MdbTableName } from '../sqlite';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
+import { whenReady } from '../extensionContext';
 
 const TABLE_CATEGORIZERS: {[K in MdbTableName]?: (column: string) => Promise<string> | string} = {
     "text_data": category => `${category} ${textDataCategories[category] ?? ""}`,
@@ -266,6 +267,8 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
     }
 
     static async generateData(tableName: MdbTableName): Promise<InitData> {
+        await whenReady;
+
         const columns = MDB_TABLE_COLUMNS[tableName];
         const rows = await SQLite.instance.loadMdbTable(tableName);
 

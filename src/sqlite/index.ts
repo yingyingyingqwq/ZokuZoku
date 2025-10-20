@@ -27,15 +27,20 @@ class SQLite {
     }
 
     private static _instance?: SQLite;
+
     static init(extensionPath: string) {
         let sqliteCommand = config().get<string>("sqlite3") ?? "sqlite3";
         let gameDataDir = config().get<string>("gameDataDir");
         let mdbPath = gameDataDir ? join(gameDataDir, "master", "master.mdb") : undefined;
         let metaPath = gameDataDir ? join(gameDataDir, "meta") : undefined;
+
         this._instance = new SQLite(extensionPath, sqliteCommand, mdbPath, metaPath);
     }
 
     static get instance(): SQLite {
+        if (!this._instance) {
+            throw new Error("SQLite service has not been initialized.");
+        }
         return this._instance!;
     }
 

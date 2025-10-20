@@ -5,8 +5,10 @@ import downloader from "./downloader";
 import config from "../config";
 import { loadBundle as loadBundleViaBridge } from '../pythonBridge';
 import { resolve as resolvePath } from 'path';
+import { whenReady } from '../extensionContext';
 
 async function getAssetHash(name: string) {
+    await whenReady;
     let sqlite = SQLite.instance;
     let query = `SELECT h FROM a WHERE n = '${name.replace("'", "")}'`;
     let queryRes = await sqlite.queryMeta(query);

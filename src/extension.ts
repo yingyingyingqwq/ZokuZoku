@@ -6,15 +6,18 @@ import tar from 'tar';
 import { spawn } from "child_process";
 
 import downloader from './core/downloader';
-import { getGameInstallPath } from './core/utils';
+import { getAllGameInstallPaths } from './core/utils';
 import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
+import { whenReady, setReady } from './extensionContext';
 import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
 import { initPythonBridge, getUnityPyVersion } from './pythonBridge';
 import { UNITYPY_VER } from "./defines";
 import { APSW_VER } from "./defines";
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
+
+let coreComponentsDisposable: vscode.Disposable | undefined;
 
 async function checkPymport(): Promise<boolean> {
     try {
@@ -59,136 +62,107 @@ async function checkUnityPy(): Promise<boolean> {
     }
 }
 
-async function installUnityPy() {
-    const exe = os.platform() === 'win32' ? 'python.exe' : path.join('bin', 'python3');
-    const python = path.join(PYMPORT_DIR, exe);
-
-    try {
-        await fs.stat(python);
-    }
-    catch {
-        throw new Error("Python binary not found in pymport install dir");
-    }
-
-    const pip = spawn(python, ['-m', 'pip', 'install', 'UnityPy==' + UNITYPY_VER, 'apsw-sqlite3mc==' + APSW_VER, '--force-reinstall'], {
-        stdio: 'inherit',
-        env: {
-            ...process.env,
-            PYTHONHOME: PYMPORT_DIR
-        }
-    });
-
-    const progressOptions = {
-        location: vscode.ProgressLocation.Notification,
-        title: "Installing UnityPy..."
-    };
-    await vscode.window.withProgress(progressOptions, () => {
-        return new Promise<void>((resolve, reject) => {
-            pip.on("error", e => {
-                reject(e);
-            })
-            .on("exit", code => {
-                if (code === 0) {
-                    resolve();
-                    return;
-                }
-                reject(new Error("Python pip process exited with code " + code));
-            });
-        });
-    });
-
-    if (await checkUnityPy() === false) {
-        throw new Error("Failed to verify UnityPy installation.");
-    }
-}
-
 const USER_GAME_DATA_DIR = path.join(os.homedir(), "AppData", "LocalLow", "Cygames", "umamusume");
 const GAME_DATA_FILES = [ "meta", path.join("master", "master.mdb") ];
+
 async function checkGameDataDir() {
     if (config().get("gameDataDir")) { return; }
 
-    const potentialGameDataDirs = [
-        USER_GAME_DATA_DIR,
-        path.join(os.homedir(), "Umamusume", "umamusume_Data", "Persistent"),
-        "C:\\Program Files (x86)\\Steam\\steamapps\\common\\UmamusumePrettyDerby_Jpn\\UmamusumePrettyDerby_Jpn_Data\\Persistent"
-    ];
+    const foundGameDataDirs: string[] = [];
 
-    let foundPath: string | undefined;
+    const potentialDirs = new Set<string>();
+    potentialDirs.add(USER_GAME_DATA_DIR);
 
-    for (const dir of potentialGameDataDirs) {
-        let found = true;
+    const installPaths = await getAllGameInstallPaths();
+    for (const installPath of installPaths) {
+        potentialDirs.add(path.join(installPath, "umamusume_Data", "Persistent"));
+        potentialDirs.add(path.join(installPath, "UmamusumePrettyDerby_Jpn_Data", "Persistent"));
+    }
+
+    for (const dir of potentialDirs) {
+        let isDirValid = true;
         for (const file of GAME_DATA_FILES) {
             try {
                 await fs.stat(path.join(dir, file));
-            }
-            catch {
-                found = false;
+            } catch {
+                isDirValid = false;
                 break;
             }
         }
-        if (found) {
-            foundPath = dir;
-            break;
+        if (isDirValid) {
+            foundGameDataDirs.push(dir);
         }
     }
 
-    if (foundPath) {
-        let res = await vscode.window.showWarningMessage(
-            `The game data directory has not been set. Would you like to set it to "${foundPath}"?`,
-            "Yes", "No"
-        );
-        if (res === "Yes") {
-            await config().update("gameDataDir", foundPath, true);
-        }
+    if (foundGameDataDirs.length === 0) {
+        throw new Error("Game data directory was not automatically detected. Please set it manually in Settings.");
     }
-    else {
-        vscode.window.showWarningMessage(
-            "The game data directory has not been set and was not automatically detected. Please set it manually in Settings."
-        );
+
+    if (foundGameDataDirs.length === 1) {
+        const gameDataDir = foundGameDataDirs[0];
+        const res = await vscode.window.showWarningMessage(`The game data directory has not been set. Would you like to set it to "${gameDataDir}"?`, "Yes", "No");
+        if (res === "Yes") {
+            await config().update("gameDataDir", gameDataDir, true);
+        } else {
+            throw new Error("Game data directory selection was cancelled.");
+        }
+        return;
+    }
+
+    if (foundGameDataDirs.length > 1) {
+        const selectedDir = await vscode.window.showQuickPick(foundGameDataDirs, { 
+            placeHolder: "Multiple game data directories found. Please select which one to use.",
+            ignoreFocusOut: true
+        });
+        if (selectedDir) {
+            await config().update("gameDataDir", selectedDir, true);
+        } else {
+            throw new Error("Game data directory selection was cancelled.");
+        }
     }
 }
 
 async function checkLocalizeDictDump() {
     if (config().get("localizeDictDump")) { return; }
 
-    let dumpPath: string | undefined;
-    const installPath = await getGameInstallPath();
-    if (installPath) {
+    const foundDumpPaths: string[] = [];
+    const installPaths = await getAllGameInstallPaths();
+
+    for (const installPath of installPaths) {
         try {
-            let tmp = path.join(installPath, "hachimi", "localize_dump.json");
-            await fs.stat(tmp);
-            dumpPath = tmp;
+            const potentialPath = path.join(installPath, "hachimi", "localize_dump.json");
+            await fs.stat(potentialPath);
+            foundDumpPaths.push(potentialPath);
         }
-        catch {
-        }
+        catch {}
     }
 
-    if (dumpPath) {
-        let res = await vscode.window.showWarningMessage(
-            `The localize dict dump path has not been set. Would you like to set it to "${dumpPath}"?`,
-            "Yes", "No"
-        );
+    if (foundDumpPaths.length === 0) {
+        throw new Error("The localize dict dump path was not automatically detected. Please set it manually in Settings.");
+    }
+
+    if (foundDumpPaths.length === 1) {
+        const dumpPath = foundDumpPaths[0];
+        const res = await vscode.window.showWarningMessage(`The localize dict dump path has not been set. Would you like to set it to "${dumpPath}"?`, "Yes", "No");
         if (res === "Yes") {
             await config().update("localizeDictDump", dumpPath, true);
+        } else {
+            throw new Error("Localize dict dump selection was cancelled.");
         }
-    }
-    else {
-        vscode.window.showWarningMessage(
-            "The localize dict dump path has not been set and was not automatically detected. Please set it manually in Settings."
-        );
         return;
     }
-}
 
-async function registerDisposables(context: vscode.ExtensionContext): Promise<vscode.Disposable[]> {
-    const { registerCommands } = await import("./commands.js");
-    const { registerEditors } = await import("./editors/index.js");
-    const { registerViews } = await import("./views/index.js");
-    return [
-        ...registerCommands(context),
-        ...registerEditors(context),
-        ...registerViews(context)
-    ];
+    if (foundDumpPaths.length > 1) {
+        const selectedPath = await vscode.window.showQuickPick(foundDumpPaths, { 
+            placeHolder: "Multiple localize_dump.json files found. Please select which one to use.",
+            ignoreFocusOut: true
+        });
+        if (selectedPath) {
+            await config().update("localizeDictDump", selectedPath, true);
+        } else {
+            throw new Error("Localize dict dump selection was cancelled.");
+        }
+    }
 }
 
 async function checkEnabled() {
@@ -209,10 +183,49 @@ async function checkEnabled() {
     }
 }
 
-// note: vscode won't wait for this promise
-export async function activate(context: vscode.ExtensionContext) {
-    SQLite.init(context.extensionPath);
+async function activateCore(context: vscode.ge.ExtensionContext) {
+    if (coreComponentsDisposable) {
+        coreComponentsDisposable.dispose();
+    }
 
+    const { registerCommands } = await import("./commands.js");
+    const { registerEditors } = await import("./editors/index.js");
+    const { registerViews } = await import("./views/index.js");
+    
+    const disposables = [
+        ...registerCommands(context),
+        ...registerEditors(context),
+        ...registerViews(context)
+    ];
+
+    coreComponentsDisposable = vscode.Disposable.from(...disposables);
+    context.subscriptions.push(coreComponentsDisposable);
+
+    await checkEnabled();
+}
+
+async function checkAndActivateCore(context: vscode.ExtensionContext) {
+    const gameDataDir = config().get<string>("gameDataDir");
+    const localizeDump = config().get<string>("localizeDictDump");
+
+    if (gameDataDir && localizeDump) {
+        await activateCore(context);
+    }
+}
+
+async function registerCoreComponents(context: vscode.ExtensionContext) {
+    const { registerCommands } = await import("./commands.js");
+    const { registerEditors } = await import("./editors/index.js");
+    const { registerViews } = await import("./views/index.js");
+    
+    context.subscriptions.push(
+        ...registerCommands(context),
+        ...registerEditors(context),
+        ...registerViews(context)
+    );
+}
+
+async function runInitialSetup(context: vscode.ExtensionContext) {
     initPythonBridge();
 
     const pyInstalled = await checkPymport();
@@ -222,35 +235,59 @@ export async function activate(context: vscode.ExtensionContext) {
             "ZokuZoku needs to install some dependencies before it can be used.", "OK", "Cancel"
         );
         if (res === "Cancel") {
-            return;
+            throw new Error("Dependency installation was cancelled by the user.");
         }
-
-        try {
-            if (!pyInstalled) { await installPymport(); }
-            if (!unityPyInstalled) { await installUnityPy(); }
-            vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
-        }
-        catch (e) {
-            vscode.window.showErrorMessage("" + e);
-            // try to clean up, ignore errors
-            fs.rm(PYMPORT_DIR, { recursive: true, force: true }).catch(() => {});
-            return;
-        }
+        if (!pyInstalled) { await installPymport(); }
+        if (!unityPyInstalled) { await installUnityPy(); }
+        vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
     }
 
     await checkGameDataDir();
     await checkLocalizeDictDump();
 
-    context.subscriptions.push(...await registerDisposables(context));
+    SQLite.init(context.extensionPath);
+
+    setReady();
 
     await checkEnabled();
+}
 
-    vscode.workspace.onDidChangeConfiguration(event => {
+// note: vscode won't wait for this promise
+export async function activate(context: vscode.ExtensionContext) {
+    SQLite.init(context.extensionPath);
+
+    context.subscriptions.push(vscode.commands.registerCommand('zokuzoku.retrySetup', () => {
+        runInitialSetup(context).catch(err => {
+            const message = err instanceof Error ? err.message : String(err);
+            vscode.window.showErrorMessage(`ZokuZoku setup failed: ${message}`, "Retry Setup")
+                .then(selection => {
+                    if (selection === "Retry Setup") {
+                        vscode.commands.executeCommand('zokuzoku.retrySetup');
+                    }
+                });
+        });
+    }));
+
+    await registerCoreComponents(context);
+
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration(CONFIG_SECTION)) {
-            checkEnabled();
             SQLite.init(context.extensionPath);
+            checkEnabled();
         }
-    });
+    }));
+
+    try {
+        await runInitialSetup(context);
+    } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`ZokuZoku setup failed: ${message}`, "Retry Setup")
+            .then(selection => {
+                if (selection === "Retry Setup") {
+                    vscode.commands.executeCommand('zokuzoku.retrySetup');
+                }
+            });
+    }
 }
 
 export function deactivate() {}

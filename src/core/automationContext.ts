@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { PyObject } from 'pymport';
 import json from '../pythonJson';
+import { whenReady } from '../extensionContext';
 
 function zk() {
     let mdbTextData: {[key: string]: {[key: string]: string}} | undefined;
@@ -120,6 +121,7 @@ function zk() {
 }
 
 async function loadMdbTextData(tableName: "text_data" | "character_system_text") {
+    await whenReady;
     const rows = await SQLite.instance.loadMdbTable(tableName);
     const res: {[key: string]: {[key: string]: string}} = {};
 
@@ -136,6 +138,7 @@ async function loadMdbTextData(tableName: "text_data" | "character_system_text")
 }
 
 async function loadMdbRaceJikkyo(tableName: "race_jikkyo_comment" | "race_jikkyo_message") {
+    await whenReady;
     const rows = await SQLite.instance.loadMdbTable(tableName);
     const res: {[key: string]: string} = {};
 

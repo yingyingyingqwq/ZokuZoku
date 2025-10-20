@@ -4,6 +4,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { PathLike } from 'fs';
+import { spawn } from 'child_process';
+import config from '../config';
 
 export function addIndent(source: string, indent: string, addAtStart = false): string {
     if (indent.length) {
@@ -88,37 +90,108 @@ export function getStoryIdComponents(id: string | number): [string, string, stri
     return [id.slice(0, 2), id.slice(2, 6), id.slice(6)];
 }
 
+async function queryRegistry(key: string, value: string): Promise<string | undefined> {
+    return new Promise((resolve) => {
+        try {
+            const reg = spawn('reg', ['query', key, '/v', value]);
+            let output = '';
+
+            reg.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            reg.on('close', (code) => {
+                if (code !== 0) {
+                    return resolve(undefined);
+                }
+                const match = output.match(new RegExp(`^\\s*${value}\\s+REG_SZ\\s+(.*)$`, 'im'));
+                if (match && match[1]) {
+                    resolve(match[1].trim());
+                } else {
+                    resolve(undefined);
+                }
+            });
+
+            reg.on('error', () => resolve(undefined));
+        } catch (e) {
+            resolve(undefined);
+        }
+    });
+}
+
 const DMM5_CONFIG_PATH = path.join(os.homedir(), "AppData", "Roaming", "dmmgameplayer5", "dmmgame.cnf");
+
+export async function getAllGameInstallPaths(): Promise<string[]> {
+    const paths: string[] = [];
+
+    try {
+        const dmmConfig = JSON.parse(await fs.readFile(DMM5_CONFIG_PATH, { encoding: "utf8" }));
+        for (const entry of dmmConfig.contents) {
+            if (entry.productId === "umamusume" && entry.detail.path) {
+                paths.push(entry.detail.path);
+            }
+        }
+    }
+    catch {}
+
+    if (os.platform() === 'win32') {
+        const steamAppId = '3564400';
+        const steamKey = `HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${steamAppId}`;
+        
+        const gamePath = await queryRegistry(steamKey, 'InstallLocation');
+        if (gamePath && await pathExists(gamePath)) {
+            if (!paths.includes(gamePath)) {
+                paths.push(gamePath);
+            }
+        }
+    }
+
+    return paths;
+}
+
 let cachedInstallPath: string | undefined;
 export async function getGameInstallPath(): Promise<string | undefined> {
     if (cachedInstallPath) {
         return cachedInstallPath;
     }
 
-    try {
-        let dmmConfig = JSON.parse(await fs.readFile(DMM5_CONFIG_PATH, { encoding: "utf8" }));
-        for (const entry of dmmConfig.contents) {
-            if (entry.productId === "umamusume") {
-                cachedInstallPath = entry.detail.path;
-                return cachedInstallPath;
-            }
-        }
+    const allPaths = await getAllGameInstallPaths();
+    if (allPaths.length > 0) {
+        cachedInstallPath = allPaths[0];
+        return cachedInstallPath;
     }
-    catch {
-    }
+    
+    return undefined;
 }
 
 export async function updateHachimiConfig(callback: (config: any) => any) {
-    const installPath = await getGameInstallPath();
-    if (!installPath) {
-        throw new Error("Failed to find game install path");
+    let hachimiDir: string | undefined;
+
+    try {
+        const dumpPath = config().get<string>("localizeDictDump");
+        if (dumpPath) {
+            hachimiDir = path.dirname(dumpPath);
+        }
+    } catch {}
+
+    if (!hachimiDir) {
+        const installPath = await getGameInstallPath();
+        if (!installPath) {
+            throw new Error("Failed to find game install path and no localizeDictDump path is configured.");
+        }
+        hachimiDir = path.join(installPath, "hachimi");
     }
 
-    const configPath = path.join(installPath, "hachimi", "config.json");
-    const data = JSON.parse(await fs.readFile(configPath, { encoding: "utf8" }));
-    const res = await callback(data);
-    if (res) {
-        await fs.writeFile(configPath, JSON.stringify(res, null, 2), { encoding: "utf8" });
+    const configPath = path.join(hachimiDir, "config.json");
+
+    try {
+        const data = JSON.parse(await fs.readFile(configPath, { encoding: "utf8" }));
+        const res = await callback(data);
+        if (res) {
+            await fs.writeFile(configPath, JSON.stringify(res, null, 2), { encoding: "utf8" });
+        }
+        return res;
+    } catch (e) {
+        throw new Error(`Failed to read or update hachimi config at ${configPath}. Error: ${e}`);
     }
-    return res;
 }
