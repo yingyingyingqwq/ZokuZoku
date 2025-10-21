@@ -6,7 +6,7 @@ import tar from 'tar';
 import { spawn } from "child_process";
 
 import downloader from './core/downloader';
-import { getAllGameInstallPaths } from './core/utils';
+import { getAllGameInstallPaths, expandEnvironmentVariables } from './core/utils';
 import config, { CONFIG_SECTION } from './config';
 import { whenReady, setReady } from './extensionContext';
 import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";

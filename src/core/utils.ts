@@ -190,3 +190,26 @@ export async function updateHachimiConfig(callback: (config: any) => any) {
         throw new Error(`Failed to read or update hachimi config at ${configPath}. Error: ${e}`);
     }
 }
+
+export function expandEnvironmentVariables(pathString: string): string {
+    if (!pathString) {
+        return pathString;
+    }
+
+    const platform = os.platform();
+
+    if (platform === 'win32') {
+        return pathString.replace(/%(.*?)%/g, (match, varName) => {
+            return process.env[varName] || match;
+        });
+    } else {
+        let expandedPath = pathString.replace(/^~(?=$|\/|\\)/, os.homedir());
+        
+        expandedPath = expandedPath.replace(/\$(?:(\w+)|\{([^}]+)\})/g, (match, varName, varNameInBraces) => {
+            const actualVarName = varName || varNameInBraces;
+            return process.env[actualVarName] || match;
+        });
+        
+        return expandedPath;
+    }
+}
