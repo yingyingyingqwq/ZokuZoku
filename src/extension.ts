@@ -62,6 +62,49 @@ async function checkUnityPy(): Promise<boolean> {
     }
 }
 
+async function installUnityPy() {
+    const exe = os.platform() === 'win32' ? 'python.exe' : path.join('bin', 'python3');
+    const python = path.join(PYMPORT_DIR, exe);
+
+    try {
+        await fs.stat(python);
+    }
+    catch {
+        throw new Error("Python binary not found in pymport install dir");
+    }
+
+    const pip = spawn(python, ['-m', 'pip', 'install', 'UnityPy==' + UNITYPY_VER, 'apsw-sqlite3mc==' + APSW_VER, '--force-reinstall'], {
+        stdio: 'inherit',
+        env: {
+            ...process.env,
+            PYTHONHOME: PYMPORT_DIR
+        }
+    });
+
+    const progressOptions = {
+        location: vscode.ProgressLocation.Notification,
+        title: "Installing UnityPy..."
+    };
+    await vscode.window.withProgress(progressOptions, () => {
+        return new Promise<void>((resolve, reject) => {
+            pip.on("error", e => {
+                reject(e);
+            })
+            .on("exit", code => {
+                if (code === 0) {
+                    resolve();
+                    return;
+                }
+                reject(new Error("Python pip process exited with code " + code));
+            });
+        });
+    });
+
+    if (await checkUnityPy() === false) {
+        throw new Error("Failed to verify UnityPy installation.");
+    }
+}
+
 const USER_GAME_DATA_DIR = path.join(os.homedir(), "AppData", "LocalLow", "Cygames", "umamusume");
 const GAME_DATA_FILES = [ "meta", path.join("master", "master.mdb") ];
 
