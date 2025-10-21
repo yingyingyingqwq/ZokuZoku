@@ -291,6 +291,7 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
             // try to clean up, ignore errors
             fs.rm(PYMPORT_DIR, { recursive: true, force: true }).catch(() => {});
             return;
+        }
         if (!pyInstalled) { await installPymport(); }
         if (!unityPyInstalled) { await installUnityPy(); }
         vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
