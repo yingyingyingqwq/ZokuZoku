@@ -7,7 +7,6 @@ import { spawn } from "child_process";
 
 import downloader from './core/downloader';
 import { getAllGameInstallPaths } from './core/utils';
-import SQLite from './sqlite';
 import config, { CONFIG_SECTION } from './config';
 import { whenReady, setReady } from './extensionContext';
 import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
@@ -280,18 +279,6 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
         if (res === "Cancel") {
             throw new Error("Dependency installation was cancelled by the user.");
         }
-
-        try {
-            if (!pyInstalled) { await installPymport(); }
-            if (!unityPyInstalled) { await installUnityPy(); }
-            vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
-        }
-        catch (e) {
-            vscode.window.showErrorMessage("" + e);
-            // try to clean up, ignore errors
-            fs.rm(PYMPORT_DIR, { recursive: true, force: true }).catch(() => {});
-            return;
-        }
         if (!pyInstalled) { await installPymport(); }
         if (!unityPyInstalled) { await installUnityPy(); }
         vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
@@ -300,6 +287,7 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
     await checkGameDataDir();
     await checkLocalizeDictDump();
 
+const { default: SQLite } = await import('./sqlite');
     SQLite.init(context.extensionPath);
 
     setReady();
@@ -309,8 +297,6 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
 
 // note: vscode won't wait for this promise
 export async function activate(context: vscode.ExtensionContext) {
-    SQLite.init(context.extensionPath);
-
     context.subscriptions.push(vscode.commands.registerCommand('zokuzoku.retrySetup', () => {
         runInitialSetup(context).catch(err => {
             const message = err instanceof Error ? err.message : String(err);
@@ -323,10 +309,9 @@ export async function activate(context: vscode.ExtensionContext) {
         });
     }));
 
-    await registerCoreComponents(context);
-
-    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration(CONFIG_SECTION)) {
+            const { default: SQLite } = await import('./sqlite');
             SQLite.init(context.extensionPath);
             checkEnabled();
         }
@@ -334,6 +319,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     try {
         await runInitialSetup(context);
+        await registerCoreComponents(context);
     } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         vscode.window.showErrorMessage(`ZokuZoku setup failed: ${message}`, "Retry Setup")
