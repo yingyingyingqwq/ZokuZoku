@@ -280,6 +280,17 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
         if (res === "Cancel") {
             throw new Error("Dependency installation was cancelled by the user.");
         }
+
+        try {
+            if (!pyInstalled) { await installPymport(); }
+            if (!unityPyInstalled) { await installUnityPy(); }
+            vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
+        }
+        catch (e) {
+            vscode.window.showErrorMessage("" + e);
+            // try to clean up, ignore errors
+            fs.rm(PYMPORT_DIR, { recursive: true, force: true }).catch(() => {});
+            return;
         if (!pyInstalled) { await installPymport(); }
         if (!unityPyInstalled) { await installUnityPy(); }
         vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
