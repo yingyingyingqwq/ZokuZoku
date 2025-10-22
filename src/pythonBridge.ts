@@ -105,6 +105,10 @@ export async function getUnityPyVersion(): Promise<{ unitypy_version: string }> 
     return execute<{ unitypy_version: string }>('version', {});
 }
 
+export async function checkApsw(): Promise<{ apsw_installed: boolean; version?: string }> {
+    return execute<{ apsw_installed: boolean; version?: string }>('check_apsw', {});
+}
+
 export async function queryEncryptedDb(db_path: string, query: string, key?: string): Promise<ResultSet> {
     const result = await execute<{ header: string[], rows: string[][] }>('query_db', { db_path, query, key });
     return [{

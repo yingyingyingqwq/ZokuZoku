@@ -1,6 +1,5 @@
 import sys
 import json
-import apsw
 import UnityPy
 from pathlib import Path
 
@@ -80,7 +79,15 @@ def handle_extract_lyrics_data(params):
 def handle_version(params):
     return {"unitypy_version": UnityPy.__version__}
 
+def handle_check_apsw(params):
+    try:
+        import apsw
+        return {"apsw_installed": True, "version": apsw.apswversion()}
+    except ImportError:
+        return {"apsw_installed": False}
+
 def handle_query_db(params):
+    import apsw
     db_path = params.get('db_path')
     if not db_path:
         raise ValueError("'db_path' parameter is missing")
@@ -174,6 +181,7 @@ def main():
 
         handlers = {
             "version": handle_version,
+            "check_apsw": handle_check_apsw,
             "query_db": handle_query_db,
             "extract_story_data": handle_extract_story_data,
             "extract_race_story_data": handle_extract_race_story_data,

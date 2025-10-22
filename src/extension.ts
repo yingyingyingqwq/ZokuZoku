@@ -9,10 +9,8 @@ import downloader from './core/downloader';
 import { getAllGameInstallPaths, expandEnvironmentVariables } from './core/utils';
 import config, { CONFIG_SECTION } from './config';
 import { whenReady, setReady } from './extensionContext';
-import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER } from "./defines";
-import { initPythonBridge, getUnityPyVersion } from './pythonBridge';
-import { UNITYPY_VER } from "./defines";
-import { APSW_VER } from "./defines";
+import { ZOKUZOKU_DIR, PYMPORT_DIR, PYMPORT_INSTALLED_FILE, PYMPORT_VER, UNITYPY_VER, APSW_VER } from "./defines";
+import { initPythonBridge, getUnityPyVersion, checkApsw } from './pythonBridge';
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
 
@@ -57,6 +55,16 @@ async function checkUnityPy(): Promise<boolean> {
     }
     catch (e) {
         console.error("checkUnityPy failed:", e);
+        return false;
+    }
+}
+
+async function checkApswPackage(): Promise<boolean> {
+    try {
+        const result = await checkApsw();
+        return result.apsw_installed;
+    } catch (e) {
+        console.error("checkApswPackage failed:", e);
         return false;
     }
 }
@@ -225,7 +233,7 @@ async function checkEnabled() {
     }
 }
 
-async function activateCore(context: vscode.ge.ExtensionContext) {
+async function activateCore(context: vscode.ExtensionContext) {
     if (coreComponentsDisposable) {
         coreComponentsDisposable.dispose();
     }
@@ -271,8 +279,9 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
     initPythonBridge();
 
     const pyInstalled = await checkPymport();
+    const apswInstalled = pyInstalled ? await checkApswPackage() : false;
     const unityPyInstalled = pyInstalled ? await checkUnityPy() : false;
-    if (!pyInstalled || !unityPyInstalled) {
+    if (!pyInstalled || !unityPyInstalled || !apswInstalled) {
         const res = await vscode.window.showInformationMessage(
             "ZokuZoku needs to install some dependencies before it can be used.", "OK", "Cancel"
         );
@@ -280,7 +289,7 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
             throw new Error("Dependency installation was cancelled by the user.");
         }
         if (!pyInstalled) { await installPymport(); }
-        if (!unityPyInstalled) { await installUnityPy(); }
+        if (!unityPyInstalled || !apswInstalled) { await installUnityPy(); }
         vscode.window.showInformationMessage("ZokuZoku's dependencies have been installed to " + ZOKUZOKU_DIR);
     }
 
