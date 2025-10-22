@@ -287,7 +287,7 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
     await checkGameDataDir();
     await checkLocalizeDictDump();
 
-const { default: SQLite } = await import('./sqlite');
+    const { default: SQLite } = await import('./sqlite');
     SQLite.init(context.extensionPath);
 
     setReady();
