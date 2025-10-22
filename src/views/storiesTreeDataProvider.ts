@@ -32,10 +32,21 @@ enum TreeLevel {
 }
 
 const categoryNames: {[key: string]: string} = {
-    "02": "Main Stories",
-    "04": "Character Stories",
-    "40": "Scenario Training Events",
-    "50": "Character Training Events"
+    "00": "> Short Episodes",
+    "01": "> Tutorials",
+    "02": "> Main Story",
+    "04": "> Umamusume Stories",
+    "08": "> Scenario Intros",
+    "09": "> Story Events",
+    "10": "> Anniv. Stories",
+    "11": "> G1 Outfit Episodes",
+    "12": "> New Year Short Episodes",
+    "13": "> KIRARI MAGIC SHOW",
+    "40": "> Scenario Career Events",
+    "50": "> Umamusume Career Events",
+    "80": "> Support Card Events (R)",
+    "82": "> Support Card Events (SR)",
+    "83": "> Support Card Events (SSR)"
 };
 
 async function getGroupName(categoryId: string, groupId: string): Promise<string | undefined> {
