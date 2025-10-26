@@ -47,7 +47,7 @@
 
 <div class="original-view" style="height: {size}px;">
     <Sash horizontal bind:size maxSize={1000} />
-    <PanelTitle label="Original" {actions} />
+    <PanelTitle label="原文" {actions} />
     <svelte:component this={inner} bind:actions />
     <AudioPlayerWidget bind:audioElement bind:hidden={audioPlayerHidden} src={voiceSrc} />
 </div>

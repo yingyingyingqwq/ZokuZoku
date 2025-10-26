@@ -188,7 +188,7 @@
                 <svelte:self node={{
                     type: "dummy",
                     id: "__prevEntries",
-                    name: `Previous ${maxChildren} entries...`,
+                    name: `查看前 ${maxChildren} 条记录……`,
                     icon: "arrow-up"
                 }} parentPath={path} on:click={prevEntries} />
             {/if}
@@ -201,7 +201,7 @@
                 <svelte:self node={{
                     type: "dummy",
                     id: "__nextEntries",
-                    name: `Next ${maxChildren} entries...`,
+                    name: `查看后 ${maxChildren} 条记录……`,
                     icon: "arrow-down"
                 }} parentPath={path} on:click={nextEntries} />
             {/if}

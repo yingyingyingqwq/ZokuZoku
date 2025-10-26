@@ -18,7 +18,7 @@
     export let tooltip = "";
 
     if (link) {
-        tooltip = tooltip ? tooltip + " (Ctrl + Click to follow link...)" : "Ctrl + Click to follow link...";
+        tooltip = tooltip ? tooltip + " (按住 Ctrl 并点击以跟随链接……)" : "按住 Ctrl 并点击以跟随链接……";
     }
 
     let focused = false;
@@ -44,7 +44,7 @@
             });
             vscode.postMessage({
                 type: "showMessage",
-                content: `Slot ${index} has been set to an empty string.`
+                content: `插槽 ${index} 已被设置为空字符串。`
             });
         }
     }

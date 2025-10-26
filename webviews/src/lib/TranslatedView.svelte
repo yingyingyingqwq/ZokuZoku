@@ -16,7 +16,7 @@
 </script>
 
 <div class="translated-view">
-    <PanelTitle label="Translated" {actions} />
+    <PanelTitle label="译文" {actions} />
     <svelte:component this={inner} bind:actions />
 </div>
 

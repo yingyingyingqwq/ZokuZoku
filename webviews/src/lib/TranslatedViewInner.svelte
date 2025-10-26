@@ -7,7 +7,7 @@
 
     export const actions: (IPanelAction | null)[] | undefined = undefined;
 
-    const placeholder = "Type your translation here...";
+    const placeholder = "在此输入你的翻译……";
 </script>
 
 <GenericSlots>

@@ -13,7 +13,7 @@
         if (message.type == "enableVoicePlayer") {
             actions = [{
                 icon: "unmute",
-                tooltip: "Play voice clip",
+                tooltip: "播放语音片段",
                 onClick: () => {
                     vscode.postMessage({ type: "loadVoice" });
                 }

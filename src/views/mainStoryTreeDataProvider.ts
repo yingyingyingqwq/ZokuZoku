@@ -187,7 +187,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                         items.push({
                             id: itemId,
                             tooltip: itemId,
-                            label: "No translatable parts."
+                            label: vscode.l10n.t("No translatable parts.")
                         });
                     }
                     break;

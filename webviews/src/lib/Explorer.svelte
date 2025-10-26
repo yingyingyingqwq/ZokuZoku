@@ -240,7 +240,7 @@
     $: actions = [
         {
             icon: "copy",
-            tooltip: "Copy",
+            tooltip: "复制",
             onClick: () => {
                 $copyingNodes = Object.assign({}, $selectedNodes);
                 $selectedNodes = {};
@@ -248,7 +248,7 @@
         },
         {
             icon: "clippy",
-            tooltip: "Paste / Fill",
+            tooltip: "粘贴 / 填充",
             onClick: async () => {
                 const src = Object.entries($copyingNodes);
                 const dest = Object.entries($selectedNodes);
@@ -259,7 +259,7 @@
 
                 const res = await vscode.showInputBox(
                     "pasteSlotCount", 
-                    "How many text slots do you want to paste? (leave empty to paste all)"
+                    "你想粘贴多少个文本栏位？（留空则粘贴全部）"
                 );
                 if (res == null) { return; }
 
@@ -338,7 +338,7 @@
         },
         {
             icon: hideExists ? "eye" : "eye-closed",
-            tooltip: hideExists ? "Show translated entries" : "Hide translated entries",
+            tooltip: hideExists ? "显示已翻译条目" : "隐藏已翻译条目",
             onClick: () => hideExists = !hideExists
         }
     ];
@@ -358,10 +358,10 @@
         </div>
         {#if searchOptionsOpen}
             <div class="search-options">
-                <div><input type="checkbox" bind:checked={searchOptions.caseSensitive}>Case sensitive</div>
-                <div><input type="checkbox" bind:checked={searchOptions.regex}>Use regular expression</div>
-                <div><input type="checkbox" bind:checked={searchOptions.searchInContent}>Search in content</div>
-                <div><input type="checkbox" bind:checked={searchOptions.excludeCategoryNames}>Exclude category names</div>
+                <div><input type="checkbox" bind:checked={searchOptions.caseSensitive}>区分大小写</div>
+                <div><input type="checkbox" bind:checked={searchOptions.regex}>使用正则表达式</div>
+                <div><input type="checkbox" bind:checked={searchOptions.searchInContent}>在内容中搜索</div>
+                <div><input type="checkbox" bind:checked={searchOptions.excludeCategoryNames}>排除类别名称</div>
             </div>
         {/if}
     </div>
@@ -374,7 +374,7 @@
     {#if searchQuery}
         <div class="tree-view" on:mousemove={onMouseMove} on:mouseup={onMouseUp}>
             {#if searchWorker}
-                <div class="searching-label">Searching...</div>
+                <div class="searching-label">搜索中...</div>
             {/if}
             {#each searchNodes as node}
                 <TreeNode {node} openAll {hideExists} />
