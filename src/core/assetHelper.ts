@@ -1,29 +1,19 @@
 import * as vscode from "vscode";
 import SQLite from "../sqlite";
-import { UnityPyEnv } from "../unityPy/environment";
 import path from "path";
 import fs from "fs/promises";
 import downloader from "./downloader";
-import UnityPy from "../unityPy";
 import config from "../config";
+import { loadBundle as loadBundleViaBridge } from '../pythonBridge';
+import { resolve as resolvePath } from 'path';
+import { whenReady } from '../extensionContext';
 
 async function getAssetHash(name: string) {
+    await whenReady;
     let sqlite = SQLite.instance;
     let query = `SELECT h FROM a WHERE n = '${name.replace("'", "")}'`;
     let queryRes = await sqlite.queryMeta(query);
     return queryRes.at(0)?.rows.at(0)?.at(0);
-}
-
-async function loadBundle(name: string): Promise<UnityPyEnv> {
-    let hash = await getAssetHash(name);
-    if (hash) {
-        return loadBundleByHash(hash);
-    }
-    else {
-        throw new Error(vscode.l10n.t('Failed to resolve asset bundle with name: {0}',
-            {0: name}
-        ));
-    }
 }
 
 function getAssetPath(hash: string) {
@@ -40,44 +30,6 @@ function getAssetPath(hash: string) {
     };
 }
 
-async function loadBundleByHash(hash: string): Promise<UnityPyEnv> {
-    let { assetDir, assetPath } = getAssetPath(hash);
-    let exists: boolean;
-    try {
-        await fs.stat(assetPath);
-        exists = true;
-    }
-    catch {
-        exists = false;
-    }
-
-    if (!exists) {
-        let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
-        if (!autoDownloadBundles) {
-            throw new Error(vscode.l10n.t('Asset bundle not found: {0}',
-                {0: hash}
-            ));
-        }
-
-        let platform = await getMetaPlatform();
-        if (!platform) {
-            throw new Error(vscode.l10n.t(
-                'Failed to detect platform of meta database'));
-        }
-
-        let downloadUrl = getBundleDownloadUrl(platform, hash);
-        await fs.mkdir(assetDir, { recursive: true });
-        await downloader.downloadToFile(
-            downloadUrl,
-            vscode.l10n.t('Downloading asset bundle: {0}', {0: hash}),
-            assetPath,
-            true
-        );
-    }
-
-    return UnityPy.load(assetPath);
-}
-
 const META_PLATFORM_QUERY = `SELECT n FROM c WHERE n = '//Android' OR n = '//Windows'`;
 async function getMetaPlatform(): Promise<string | undefined> {
     let sqlite = SQLite.instance;
@@ -86,7 +38,7 @@ async function getMetaPlatform(): Promise<string | undefined> {
 }
 
 function getBundleDownloadUrl(platform: string, hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
+    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function loadGenericAsset(name: string): Promise<string> {
@@ -102,28 +54,46 @@ async function loadGenericAsset(name: string): Promise<string> {
     }
 }
 
-async function loadGenericAssetByHash(hash: string): Promise<string> {
-    let { assetDir, assetPath } = getAssetPath(hash);
+function getGenericDownloadUrl(hash: string) {
+    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
+}
+
+async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<string> {
+    const { assetDir, assetPath } = getAssetPath(hash);
+
     try {
         await fs.stat(assetPath);
         return assetPath;
-    }
-    catch {
+    } catch {
     }
 
-    let autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
+    const autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
     if (!autoDownloadBundles) {
         throw new Error(vscode.l10n.t(
-            'Asset not found: {0}',
+            'Asset not found and auto-download is disabled: {0}',
             {0: hash}
         ));
     }
 
-    let downloadUrl = getGenericDownloadUrl(hash);
+    let downloadUrl: string;
+    let assetType: string;
+
+    if (isGeneric) {
+        downloadUrl = getGenericDownloadUrl(hash);
+        assetType = "generic asset";
+    } else {
+        const platform = await getMetaPlatform();
+        if (!platform) {
+            throw new Error("Could not determine platform from meta DB to download asset bundle.");
+        }
+        downloadUrl = getBundleDownloadUrl(platform, hash);
+        assetType = "asset bundle";
+    }
+
     await fs.mkdir(assetDir, { recursive: true });
     await downloader.downloadToFile(
         downloadUrl,
-        vscode.l10n.t('Downloading generic asset: {0}', {0: hash}),
+        vscode.l10n.t('Downloading {0}: {1}', {0: assetType, 1: hash}),
         assetPath,
         true
     );
@@ -131,15 +101,8 @@ async function loadGenericAssetByHash(hash: string): Promise<string> {
     return assetPath;
 }
 
-function getGenericDownloadUrl(hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
-}
-
 export default {
     getAssetHash,
-    loadBundle,
     getAssetPath,
-    loadBundleByHash,
-    loadGenericAsset,
-    loadGenericAssetByHash
+    ensureAssetDownloaded
 };

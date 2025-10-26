@@ -47,6 +47,8 @@
   "config.sqlite3.description": "SQLite3 命令或可执行文件路径。",
   "config.useGameFont.description": "在编辑器中使用游戏字体。",
   "config.customFont.description": "在编辑器中使用自定义字体文件的路径。",
-  "config.hachimiIpcAddress.description": "要连接的 Hachimi IPC 地址（不含端口）。默认连接到本机运行的 Hachimi。若要使用远程设备，请在 Hachimi 中启用 IPC 和“IPC listen all”，并将地址设置为远程设备的地址。"
-
+  "config.hachimiIpcAddress.description": "要连接的 Hachimi IPC 地址（不含端口）。默认连接到本机运行的 Hachimi。若要使用远程设备，请在 Hachimi 中启用 IPC 和“IPC listen all”，并将地址设置为远程设备的地址。",
+  "config.decryption.description": "为加密的meta数据库和资产包启用解密。",
+  "config.decryptionMetakey.description": "用于meta数据库的解密密钥（十六进制字符串）。如果留空，将使用默认密钥。"
+  
 }

@@ -3,12 +3,13 @@ import { getEditorHtml, makeEditForStringProperty } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument } from '../core';
 import assetHelper from '../core/assetHelper';
-import { TextAsset } from '../unityPy/classes';
-import { ClassIDType } from '../unityPy/enums';
-import { Proxify } from '../pythonInterop';
 import { parse as parseCsv } from 'csv-parse/sync';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
+import { extractLyricsData } from '../pythonBridge';
+import config from '../config';
+import SQLite from '../sqlite';
+import { resolve as resolvePath } from 'path';
 
 export class LyricsEditorProvider extends EditorBase implements vscode.CustomTextEditorProvider {
     static readonly viewType = 'zokuzoku.lyricsEditor';
@@ -125,7 +126,6 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
     }
 
     static async generateNodes(uri: vscode.Uri): Promise<ITreeNode[]> {
-        // Parse filename
         const pathSplit = uri.path.split("/");
         const filename = pathSplit.at(-1);
         const matches = filename?.match(/^(m\d{4})(_lyrics\.json)$/);
@@ -136,36 +136,37 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
             );
         }
 
-        // Read the lyrics asset
         const lyricsAssetName = musicId + "_lyrics";
-        const env = await assetHelper.loadBundle(`live/musicscores/${musicId}/${lyricsAssetName}`);
-        const objects = env.objects;
-        if (!objects.length) {
-            throw new Error(
-                vscode.l10n.t('Failed to load asset bundle')
-            );
+        const assetBundleName = `live/musicscores/${musicId}/${lyricsAssetName}`;
+
+        const hash = await assetHelper.getAssetHash(assetBundleName);
+        if (!hash) {
+            throw new Error(vscode.l10n.t('Could not find hash for asset bundle: {0}', {0: assetBundleName}));
         }
-        let lyricsAsset: Proxify<TextAsset> | undefined;
-        for (const obj of objects) {
-            if (obj.type.toJS() === ClassIDType.TextAsset) {
-                const asset = obj.read<TextAsset>(false);
-                if (asset.name.toJS() === lyricsAssetName) {
-                    lyricsAsset = asset;
-                    break;
-                }
-            }
-        }
-        if (!lyricsAsset) {
-            throw new Error(
-                vscode.l10n.t('Failed to find lyrics asset in bundle')
-            );
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
+
+        const useDecryption = config().get<boolean>("decryption.enabled");
+        const metaPath = SQLite.instance.getMetaPath();
+        const metaKey = config().get<string>("decryption.metaKey");
+
+        if (useDecryption && !metaPath) {
+            throw new Error(vscode.l10n.t("Decryption is enabled, but the meta path is not set."));
         }
 
-        // Create nodes from data
-        const data: [string, string][] = parseCsv(lyricsAsset.script.toJS(), {
-            encoding: "utf8",
-            from: 2,
-            relax_column_count_more: true, // some files have an extra delim at the end for some reason
+        const absoluteAssetPath = resolvePath(assetPath);
+        const absoluteMetaPath = metaPath ? resolvePath(metaPath) : '';
+
+        const lyricsData = await extractLyricsData({
+            assetPath: absoluteAssetPath,
+            assetName: lyricsAssetName,
+            useDecryption: useDecryption,
+            metaPath: absoluteMetaPath,
+            bundleHash: hash,
+            metaKey: metaKey
+        });
+
+        const data: [string, string][] = parseCsv(lyricsData.csv_data, {
+            encoding: "utf8", from: 2, relax_column_count_more: true,
             skip_empty_lines: true
         });
 
@@ -173,20 +174,11 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         for (const row of data) {
             const [ time, lyrics ] = row;
             if (!lyrics) { continue; }
-
             const prevNode = nodes[nodes.length - 1];
-            if (prevNode) {
-                prevNode.next = time;
-            }
-
+            if (prevNode) { prevNode.next = time; }
             nodes.push({
-                type: "entry",
-                id: time,
-                name: lyrics,
-                content: [{
-                    content: lyrics,
-                    multiline: true
-                }],
+                type: "entry", id: time, name: lyrics,
+                content: [{ content: lyrics, multiline: true }],
                 prev: prevNode?.id
             });
         }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import SQLite from '../sqlite';
 import { LocalizedDataManager, utils } from '../core';
 import RefreshableTreeDataProviderBase from './refreshableTreeDataProviderBase';
+import { whenReady } from '../extensionContext';
 
 function queryCategories() {
     return SQLite.instance.queryMeta(
@@ -95,6 +96,8 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
     }
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        await whenReady;
+
         const items: vscode.TreeItem[] = [];
         if (!element) {
             // Categories

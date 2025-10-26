@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import SQLite from '../sqlite';
 import { LocalizedDataManager, utils } from '../core';
 import RefreshableTreeDataProviderBase from './refreshableTreeDataProviderBase';
+import { whenReady } from '../extensionContext';
 
 const LYRICS_PATH_QUERY = "SELECT n FROM a WHERE n LIKE 'live/musicscores/%\\_lyrics' ESCAPE '\\'";
 
@@ -32,6 +33,8 @@ export default class LyricsTreeDataProvider extends RefreshableTreeDataProviderB
     }
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        await whenReady;
+
         if (element) { return []; }
 
         const items: vscode.TreeItem[] = [];

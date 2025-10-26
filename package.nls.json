@@ -47,6 +47,7 @@
   "config.sqlite3.description": "SQLite3 command or executable path.",
   "config.useGameFont.description": "Use the game's font in editors.",
   "config.customFont.description": "Path to a custom font file to be used in editors.",
-  "config.hachimiIpcAddress.description": "The Hachimi IPC address to connect to (not including the port). By default, it connects to Hachimi running on your local machine. To use a remote device, enable IPC and \"IPC listen all\" in Hachimi, and set the address to the remote device's address."
-
+  "config.hachimiIpcAddress.description": "The Hachimi IPC address to connect to (not including the port). By default, it connects to Hachimi running on your local machine. To use a remote device, enable IPC and \"IPC listen all\" in Hachimi, and set the address to the remote device's address.",
+  "config.decryption.description": "Enable decryption for encrypted 'meta' database and asset bundles.",
+  "config.decryptionMetakey.description": "The decryption key (hex string) for the 'meta' database. If left empty, a default key will be used."
 }

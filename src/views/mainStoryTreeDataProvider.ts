@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import SQLite from '../sqlite';
 import { LocalizedDataManager, utils } from '../core';
 import RefreshableTreeDataProviderBase from './refreshableTreeDataProviderBase';
+import { whenReady } from '../extensionContext';
 
 function queryAllChapters() {
     return SQLite.instance.queryMdb('SELECT DISTINCT "part_id" FROM main_story_data');
@@ -70,6 +71,8 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
     }
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        await whenReady;
+
         const items: vscode.TreeItem[] = [];
         if (!element) {
             // Acts

@@ -3,16 +3,17 @@ import { getEditorHtml, makeEditForArray } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument } from '../core';
 import assetHelper from '../core/assetHelper';
-import { ClassIDType } from '../unityPy/enums';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
-import { AssetBundle } from '../unityPy/classes/assetBundle';
-import { Proxify } from '../pythonInterop';
 import path from 'path';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import { ACB } from "cricodecs";
 import fs from 'fs/promises';
 import { pathExists } from '../core/utils';
+import { extractRaceStoryData } from '../pythonBridge';
+import config from '../config';
+import SQLite from '../sqlite';
+import { resolve as resolvePath } from 'path';
 
 export class RaceStoryEditorProvider extends EditorBase implements vscode.CustomTextEditorProvider {
     static readonly viewType = 'zokuzoku.raceStoryEditor';
@@ -136,7 +137,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                             if (!hash) {
                                 return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
                             }
-                            const acbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            const acbPath = await await assetHelper.ensureAssetDownloaded(hash, true);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: vscode.l10n.t("Decoding audio")
@@ -194,49 +195,42 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
     static async generateNodes(info: RaceStoryAssetInfo): Promise<ITreeNode[]> {
         const { assetBundleName, assetName } = info;
 
-        // Read the asset
-        const env = await assetHelper.loadBundle(assetBundleName);
-        const objects = env.objects;
-        if (!objects.length) {
-            throw new Error(vscode.l10n.t("Failed to load asset bundle"));
+        const hash = await assetHelper.getAssetHash(assetBundleName);
+        if (!hash) {
+            throw new Error(vscode.l10n.t(`Could not find hash for asset bundle: {0}`, {0: assetBundleName}));
         }
-        let assetBundle: Proxify<AssetBundle> | undefined;
-        for (const obj of objects) {
-            if (obj.type.toJS() === ClassIDType.AssetBundle) {
-                assetBundle = obj.read<AssetBundle>(false);
-                break;
-            }
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
+
+        const useDecryption = config().get<boolean>("decryption.enabled");
+        const metaPath = SQLite.instance.getMetaPath();
+        const metaKey = config().get<string>("decryption.metaKey");
+
+        if (useDecryption && !metaPath) {
+            throw new Error(vscode.l10n.t("Decryption is enabled, but the meta path is not set."));
         }
-        if (!assetBundle) {
-            throw new Error(vscode.l10n.t("Failed to find asset bundle object"));
-        }
-        let assetInfo = assetBundle.m_Container.item(
-            `assets/_gallopresources/bundle/resources/race/storyrace/text/${assetName}.asset`
-        );
-        if (!assetInfo) {
-            throw new Error(vscode.l10n.t("Failed to find text asset"));
-        }
-        let textAsset = assetInfo.asset.get_obj().read(false);
-        let textData = textAsset.type_tree.item("textData") as Proxify<{ text: string }[]>;
+
+        const absoluteAssetPath = resolvePath(assetPath);
+        const absoluteMetaPath = metaPath ? resolvePath(metaPath) : '';
+
+        const raceData = await extractRaceStoryData({
+            assetPath: absoluteAssetPath,
+            assetName: assetName,
+            useDecryption: useDecryption,
+            metaPath: absoluteMetaPath,
+            bundleHash: hash,
+            metaKey: metaKey
+        });
 
         const nodes: IEntryTreeNode[] = [];
-        let i = 0;
-        for (const block of textData) {
-            const id = i++;
+        for (const [i, text] of raceData.texts.entries()) {
+            const id = i;
             const prevNode = nodes[nodes.length - 1];
             if (prevNode) {
                 prevNode.next = id;
             }
-
-            const text = block.text.toJS();
             nodes.push({
-                type: "entry",
-                id,
-                name: text,
-                content: [{
-                    content: text,
-                    multiline: true
-                }],
+                type: "entry", id, name: text,
+                content: [{ content: text, multiline: true }],
                 prev: prevNode?.id
             });
         }

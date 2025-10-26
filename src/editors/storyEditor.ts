@@ -3,18 +3,17 @@ import { getEditorHtml, makeEditForArray, makeEditForStringProperty } from './ut
 import { StoryEditorControllerMessage, EditorMessage, IEntryTreeNode, IStoryTextSlot, ITreeNode, StoryTextSlotType, TreeNodeId } from './sharedTypes';
 import { JsonArrayEdit, JsonDocument, JsonEdit, JsonObjectEdit, LocalizedDataManager } from '../core';
 import assetHelper from '../core/assetHelper';
-import { ClassIDType } from '../unityPy/enums';
-import { Proxify } from '../pythonInterop';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
-import { AssetBundle } from '../unityPy/classes/assetBundle';
-import { PPtr } from '../unityPy/classes/pPtr';
-import { ObjectBase } from '../unityPy/classes';
 import { HCA_KEY, ZOKUZOKU_DIR } from '../defines';
 import path from 'path';
 import { AFS2 } from 'cricodecs';
 import fs from 'fs/promises';
 import { pathExists } from '../core/utils';
+import { extractStoryData } from '../pythonBridge';
+import { resolve as resolvePath } from 'path';
+import config from '../config';
+import SQLite from '../sqlite';
 
 const STORY_VIEW_CATEGORIES = new Set<string>(["02", "04", "09"]);
 
@@ -314,7 +313,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                             if (!hash) {
                                 return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
                             }
-                            const awbPath = await assetHelper.loadGenericAssetByHash(hash);
+                            const awbPath = await assetHelper.ensureAssetDownloaded(hash, true);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: vscode.l10n.t("Decoding audio")
@@ -389,98 +388,89 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
     static async generateData(info: StoryAssetInfo): Promise<InitData> {
         const { assetBundleName, assetName } = info;
 
-        const env = await assetHelper.loadBundle(assetBundleName);
-        const objects = env.objects;
-        if (!objects.length) {
-            throw new Error(vscode.l10n.t("Failed to load asset bundle"));
+        const hash = await assetHelper.getAssetHash(assetBundleName);
+        if (!hash) {
+            throw new Error(`Could not find hash for asset bundle: {0}`, {0: assetBundleName});
         }
-        let assetBundle: Proxify<AssetBundle> | undefined;
-        for (const obj of objects) {
-            if (obj.type.toJS() === ClassIDType.AssetBundle) {
-                assetBundle = obj.read<AssetBundle>(false);
-                break;
-            }
+        const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
+
+        const useDecryption = config().get<boolean>("decryption.enabled");
+        const metaPath = SQLite.instance.getMetaPath();
+        const metaKey = config().get<string>("decryption.metaKey");
+
+        if (useDecryption && !metaPath) {
+            throw new Error(vscode.l10n.t("Decryption is enabled, but the meta path is not set."));
         }
-        if (!assetBundle) {
-            throw new Error(vscode.l10n.t("Failed to find asset bundle object"));
-        }
-        let assetInfo = assetBundle.m_Container.item(assetName);
-        if (!assetInfo) {
-            throw new Error(vscode.l10n.t("Failed to find timeline data asset"));
-        }
-        let timelineData = assetInfo.asset.get_obj().read(false).type_tree;
+
+        const absoluteAssetPath = resolvePath(assetPath);
+        const absoluteMetaPath = metaPath ? resolvePath(metaPath) : '';
+
+        const timelineData = await extractStoryData({
+            assetPath: absoluteAssetPath,
+            assetName: assetName,
+            useDecryption: useDecryption,
+            metaPath: absoluteMetaPath,
+            bundleHash: hash,
+            metaKey: metaKey
+        });
 
         const nodes: ITreeNode<IStoryTextSlot>[] = [];
-        const title = (timelineData.item("Title") as Proxify<string>).toJS();
         let resTitle: string | undefined;
-        if (title && title !== "0") {
+        if (timelineData.title && timelineData.title !== "0") {
             nodes.push({
                 type: "entry",
                 id: "title",
                 name: vscode.l10n.t("Title"),
                 icon: "whole-word",
-                content: [{ content: title }],
+                content: [{ content: timelineData.title }],
                 next: 0
             });
-            resTitle = title;
+            resTitle = timelineData.title;
         }
 
-        const blockList = (timelineData.item("BlockList") as Proxify<StoryTimelineBlockData[]>);
         const contentRanges: BlockContentRanges[] = [];
         let prevMaleNode: IEntryTreeNode | undefined;
         let prevFemaleNode: IEntryTreeNode | undefined;
         const voiceCues: [string, number][] = [];
         let globalCueOffset = 0;
-        for (let i = 1; i < blockList.length; ++i) {
-            const block = blockList.item(i);
-            const textClip = block.TextTrack.ClipList.item(0).get_obj().read<StoryTimelineTextClipData>(false);
 
+        for (const [i, block] of timelineData.blockList.entries()) {
             let content: IStoryTextSlot[] = [
                 {
-                    content: textClip.Name.toJS(),
-                    userData: {
-                        type: StoryTextSlotType.Name
-                    },
+                    content: block.name,
+                    userData: { type: StoryTextSlotType.Name },
                     tooltip: vscode.l10n.t("Name")
                 },
                 {
-                    content: textClip.Text.toJS(),
+                    content: block.text,
                     multiline: true,
-                    userData: {
-                        type: StoryTextSlotType.Content
-                    },
+                    userData: { type: StoryTextSlotType.Content },
                     tooltip: vscode.l10n.t("Content")
                 }
             ];
 
             let start = 2;
             let end = start;
-            for (const choiceData of textClip.ChoiceDataList) {
+            for (const choiceData of block.choices) {
                 let tooltip: string | undefined;
                 let gender: "male" | "female" | undefined;
-                switch (choiceData.DifferenceFlag.toJS()) {
+                switch (choiceData.differenceFlag) {
                     case DifferenceFlag.GenderMale:
                         tooltip = vscode.l10n.t("Male trainer choice");
                         gender = "male";
                         break;
-                    
                     case DifferenceFlag.GenderFemale:
                         tooltip = vscode.l10n.t("Female trainer choice");
                         gender = "female";
                         break;
-                    
                     default:
                         tooltip = vscode.l10n.t("Choice");
                         break;
                 }
-
                 content.push({
-                    content: choiceData.Text.toJS(),
-                    userData: {
-                        type: StoryTextSlotType.Choice,
-                        gender
-                    },
-                    link: choiceData.NextBlock.toJS() - 1,
+                    content: choiceData.text,
+                    userData: { type: StoryTextSlotType.Choice, gender },
+                    link: choiceData.nextBlock - 1,
                     tooltip
                 });
                 ++end;
@@ -488,21 +478,19 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             const choiceRange = new ContentRange(start, end);
 
             start = end;
-            for (const colorTextInfo of textClip.ColorTextInfoList) {
+            for (const colorTextInfo of block.colorTexts) {
                 content.push({
-                    content: colorTextInfo.Text.toJS(),
-                    userData: {
-                        type: StoryTextSlotType.ColorText
-                    },
+                    content: colorTextInfo.text,
+                    userData: { type: StoryTextSlotType.ColorText },
                     tooltip: vscode.l10n.t("Color text")
                 });
                 ++end;
             }
             const colorRange = new ContentRange(start, end);
 
-            const id = i - 1;
+            const id = i;
             let name = id.toString();
-            const differenceFlag = textClip.DifferenceFlag.toJS();
+            const differenceFlag = block.differenceFlag;
 
             function updatePrevMaleNode() {
                 if (prevMaleNode && id >= +prevMaleNode.next!) {
@@ -514,13 +502,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             function updatePrevFemaleNode() {
                 if (prevFemaleNode && id >= +prevFemaleNode.next!) {
                     prevFemaleNode.next = id;
-                    // Choices always point to the male block
                     for (const slot of prevFemaleNode.content) {
-                        if (slot.link) {
-                            slot.link = id;
-                        }
+                        if (slot.link) slot.link = id;
                     }
-
                     prevFemaleNode = undefined;
                 }
             }
@@ -532,12 +516,10 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     updatePrevMaleNode();
                     cueOffset = 1;
                     break;
-
                 case DifferenceFlag.GenderFemale:
                     name += ` (${vscode.l10n.t("female trainer")})`;
                     updatePrevFemaleNode();
                     break;
-                
                 default:
                     updatePrevMaleNode();
                     updatePrevFemaleNode();
@@ -550,7 +532,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 name,
                 content,
                 prev: nodes[nodes.length - 1]?.id,
-                next: textClip.NextBlock.toJS() - 1
+                next: block.nextBlock - 1
             };
             nodes.push(node);
             contentRanges.push({
@@ -558,7 +540,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 colorTextInfoList: colorRange
             });
 
-            const cueId = textClip.CueId.toJS();
+            const cueId = block.cueId;
             if (cueId !== -1) {
                 voiceCues.push([id.toString(), cueId + cueOffset + globalCueOffset]);
             }
@@ -567,7 +549,6 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 case DifferenceFlag.GenderMale:
                     prevMaleNode = node;
                     break;
-
                 case DifferenceFlag.GenderFemale:
                     prevFemaleNode = node;
                     if (cueId !== -1) {
@@ -649,36 +630,8 @@ class ContentRange {
     }
 }
 
-interface StoryTimelineBlockData {
-    TextTrack: StoryTimelineTextTrackData;
-}
-
-interface StoryTimelineTextTrackData {
-    ClipList: PPtr[];
-}
-
-interface StoryTimelineTextClipData extends ObjectBase {
-    Name: string;
-    Text: string;
-    ChoiceDataList: ChoiceData[];
-    ColorTextInfoList: ColorTextInfo[];
-    NextBlock: number;
-    DifferenceFlag: DifferenceFlag;
-    CueId: number;
-}
-
 enum DifferenceFlag {
     None = 0,
     GenderMale = 2,
     GenderFemale = 4
-}
-
-interface ChoiceData {
-    Text: string;
-    NextBlock: number;
-    DifferenceFlag: DifferenceFlag;
-}
-
-interface ColorTextInfo {
-    Text: string;
 }

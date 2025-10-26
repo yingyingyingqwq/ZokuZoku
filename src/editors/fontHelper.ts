@@ -3,8 +3,13 @@ import assetHelper from '../core/assetHelper';
 import config from '../config';
 import { ControllerMessage } from './sharedTypes';
 
-async function getGameFontUri(): Promise<vscode.Uri> {
-    const assetPath = await assetHelper.loadGenericAsset('font/dynamic01.otf');
+async function getGameFontUri() {
+    const fontHash = await assetHelper.getAssetHash("font/dynamic01.otf");
+    if (!fontHash) {
+        throw new Error(vscode.l10n.t("Could not find hash for game font asset."));
+    }
+
+    let assetPath = await assetHelper.ensureAssetDownloaded(fontHash, true);
     return vscode.Uri.file(assetPath);
 }
 
