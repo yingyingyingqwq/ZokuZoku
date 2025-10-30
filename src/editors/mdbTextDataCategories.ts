@@ -312,17 +312,27 @@ const categories: {[key: string]: string} = {
     "392": "> Autoplay #6",
     "393": "> Autoplay #7",
     "394": "> Outcomes Button",
+    "397": "> Onsen Scenario #1",
+    "398": "> Onsen Scenario #2",
+    "399": "> Onsen Scenario #3",
     "400": "> Island Scenario #4",
     "401": "> Autoplay AI Descriptions",
+    "402": "> Onsen Scenario #4",
     "403": "> Gacha Roullette #1",
     "404": "> Gacha Roullette #2",
+    "407": "> Onsen Scenario #5",
+    "408": "> Onsen Scenario #6",
+    "409": "> Onsen Scenario #7",
     "410": "> Autoplay #8",
     "411": "> Champions Meeting Special Rules",
+    "412": "> Onsen Scenario #8",
     "416": "> Strolls",
     "417": "> Island Scenario #5",
     "418": "> Island Scenario #6",
     "419": "> Island Scenario #7",
+    "422": "> Onsen Scenario #9",
     "423": "> SiL Career Story Choices #1",
-    "424": "> SiL Career Story Choices #2"
+    "424": "> SiL Career Story Choices #2",
+    "432": "> Onsen Scenario #10"
 };
 export default categories;
