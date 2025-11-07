@@ -36,7 +36,7 @@ async function getMetaPlatform(): Promise<string | undefined> {
 }
 
 function getBundleDownloadUrl(platform: string, hash: string) {
-    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
+    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function loadGenericAsset(name: string): Promise<string> {
@@ -50,7 +50,7 @@ async function loadGenericAsset(name: string): Promise<string> {
 }
 
 function getGenericDownloadUrl(hash: string) {
-    return `https://prd-storage-app-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
+    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<string> {
