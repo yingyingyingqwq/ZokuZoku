@@ -87,8 +87,7 @@ class SQLite {
 
             if (isDecryptionError) {
                 try {
-                    const glKeyString = META_KEY_GLOBAL.toString(16);
-                    await queryEncryptedDb(absoluteMetaPath, testQuery, glKeyString);
+                    await queryEncryptedDb(absoluteMetaPath, testQuery, META_KEY_GLOBAL);
                     this.detectedGameVersion = "GL";
                     this.detectedMetaKey = glKeyString;
                     return this.detectedMetaKey;
