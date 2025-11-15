@@ -89,7 +89,7 @@ class SQLite {
                 try {
                     await queryEncryptedDb(absoluteMetaPath, testQuery, META_KEY_GLOBAL);
                     this.detectedGameVersion = "GL";
-                    this.detectedMetaKey = glKeyString;
+                    this.detectedMetaKey = META_KEY_GLOBAL;
                     return this.detectedMetaKey;
                 } catch (e2) {
                     const err2 = e2 as Error;
