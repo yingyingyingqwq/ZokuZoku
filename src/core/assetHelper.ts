@@ -35,8 +35,29 @@ async function getMetaPlatform(): Promise<string | undefined> {
     return queryRes.at(0)?.rows.at(0)?.at(0)?.slice(2);
 }
 
-function getBundleDownloadUrl(platform: string, hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
+const ASSET_BASE_URL_JP = "https://prd-storage-game-umamusume.akamaized.net/dl/resources/";
+const ASSET_BASE_URL_GL = "https://assets-umamusume-en.akamaized.net/dl/vertical/resources/";
+let assetBaseUrl: string | undefined;
+
+async function getAssetBaseUrl(): Promise<string> {
+    if (assetBaseUrl) {
+        return assetBaseUrl;
+    }
+
+    await getMetaPlatform();
+
+    if (SQLite.detectedGameVersion === "GL") {
+        assetBaseUrl = ASSET_BASE_URL_GL;
+    } else {
+        assetBaseUrl = ASSET_BASE_URL_JP;
+    }
+
+    return assetBaseUrl;
+}
+
+async function getBundleDownloadUrl(platform: string, hash: string) {
+    const baseUrl = await getAssetBaseUrl();
+    return `${baseUrl}${platform}/assetbundles/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function loadGenericAsset(name: string): Promise<string> {
@@ -49,8 +70,9 @@ async function loadGenericAsset(name: string): Promise<string> {
     }
 }
 
-function getGenericDownloadUrl(hash: string) {
-    return `https://prd-storage-game-umamusume.akamaized.net/dl/resources/Generic/${hash.slice(0, 2)}/${hash}`;
+async function getGenericDownloadUrl(hash: string) {
+    const baseUrl = await getAssetBaseUrl();
+    return `${baseUrl}Generic/${hash.slice(0, 2)}/${hash}`;
 }
 
 async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<string> {
@@ -71,14 +93,14 @@ async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<
     let assetType: string;
 
     if (isGeneric) {
-        downloadUrl = getGenericDownloadUrl(hash);
+        downloadUrl = await getGenericDownloadUrl(hash);
         assetType = "generic asset";
     } else {
         const platform = await getMetaPlatform();
         if (!platform) {
             throw new Error("Could not determine platform from meta DB to download asset bundle.");
         }
-        downloadUrl = getBundleDownloadUrl(platform, hash);
+        downloadUrl = await getBundleDownloadUrl(platform, hash);
         assetType = "asset bundle";
     }
 
@@ -86,6 +108,10 @@ async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<
     await downloader.downloadToFile(downloadUrl, `Downloading ${assetType}: ${hash}`, assetPath, true);
 
     return assetPath;
+}
+
+async function loadGenericAssetByHash(hash: string): Promise<string> {
+    return ensureAssetDownloaded(hash, true);
 }
 
 export default {

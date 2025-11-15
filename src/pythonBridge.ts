@@ -4,6 +4,7 @@ import path from 'path';
 import { PYMPORT_DIR } from './defines';
 import { ResultSet } from './sqlite/common';
 import config from './config';
+import SQLite from './sqlite';
 
 export interface StoryChoiceData {
     text: string;
@@ -127,15 +128,20 @@ interface ExtractStoryDataParams {
     metaKey?: string;
 }
 
+async function getMetaKeyIfEnabled(useDecryption: boolean): Promise<string | undefined> {
+    return useDecryption ? SQLite.getMetaKey() : undefined;
+}
+
 export async function loadBundle(
     args: ExtractStoryDataParams
 ): Promise<{ success: boolean; asset_count: number }> {
+    const metaKey = await getMetaKeyIfEnabled(args.useDecryption);
     const params = {
         "asset_path": args.assetPath,
         "use_decryption": args.useDecryption,
         "meta_path": args.metaPath,
         "bundle_hash": args.bundleHash,
-        "meta_key": args.metaKey
+        "meta_key": metaKey
     };
     return execute<{ success: boolean; asset_count: number }>('load_bundle', params);
 }
@@ -143,13 +149,14 @@ export async function loadBundle(
 export async function extractStoryData(
     args: ExtractStoryDataParams
 ): Promise<ExtractedStoryData> {
+    const metaKey = await getMetaKeyIfEnabled(args.useDecryption);
     const params = {
         "asset_path": args.assetPath,
         "asset_name": args.assetName,
         "use_decryption": args.useDecryption,
         "meta_path": args.metaPath,
         "bundle_hash": args.bundleHash,
-        "meta_key": args.metaKey
+        "meta_key": metaKey
     };
 
     console.log("[ZokuZoku] Sending parameters to Python bridge:", params);
@@ -160,13 +167,14 @@ export async function extractStoryData(
 export async function extractRaceStoryData(
     args: ExtractStoryDataParams
 ): Promise<{ texts: string[] }> {
+    const metaKey = await getMetaKeyIfEnabled(args.useDecryption);
     const params = {
         "asset_path": args.assetPath,
         "asset_name": args.assetName,
         "use_decryption": args.useDecryption,
         "meta_path": args.metaPath,
         "bundle_hash": args.bundleHash,
-        "meta_key": args.metaKey
+        "meta_key": metaKey
     };
     return execute<{ texts: string[] }>('extract_race_story_data', params);
 }
@@ -174,13 +182,14 @@ export async function extractRaceStoryData(
 export async function extractLyricsData(
     args: ExtractStoryDataParams
 ): Promise<{ csv_data: string }> {
+    const metaKey = await getMetaKeyIfEnabled(args.useDecryption);
     const params = {
         "asset_path": args.assetPath,
         "asset_name": args.assetName,
         "use_decryption": args.useDecryption,
         "meta_path": args.metaPath,
         "bundle_hash": args.bundleHash,
-        "meta_key": args.metaKey
+        "meta_key": metaKey
     };
     return execute<{ csv_data: string }>('extract_lyrics_data', params);
 }
