@@ -283,10 +283,10 @@ const categories: {[key: string]: string} = {
     "362": "> Description Texts (Jobs)",
     "363": "> Legends Scenario #1",
     "364": "> Legends Scenario #2",
-    "365": "> Half Anniv. Event #1",
-    "366": "> Half Anniv. Event #2",
-    "367": "> Half Anniv. Event #3",
-    "368": "> Half Anniv. Event #4",
+    "365": "> Mini Events Stuff #1",
+    "366": "> Mini Events Stuff #2",
+    "367": "> Mini Events Stuff #3",
+    "368": "> Mini Events Stuff #4",
     "369": "> Legends Scenario #3",
     "370": "> Legends Scenario #4",
     "371": "> Legends Scenario #5",
@@ -333,6 +333,14 @@ const categories: {[key: string]: string} = {
     "422": "> Onsen Scenario #9",
     "423": "> SiL Career Story Choices #1",
     "424": "> SiL Career Story Choices #2",
-    "432": "> Onsen Scenario #10"
+    "429": "> The White Era Mini-Event #1",
+    "431": "> The White Era Mini-Event #2",
+    "432": "> Onsen Scenario #10",
+    "434": "> The White Era Mini-Event #3",
+    "444": "> Transcend Career Story Choices (?)",
+    "445": "> The White Era Mini-Event #4",
+    "446": "> The White Era Mini-Event #5",
+    "447": "> The White Era Mini-Event #6",
+    "448": "> The White Era Mini-Event #7"
 };
 export default categories;
