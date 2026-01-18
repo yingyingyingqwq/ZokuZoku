@@ -6,7 +6,7 @@
   "repository": {
     "url": "https://github.com/Hachimi-Hachimi/ZokuZoku"
   },
-  "version": "0.3.2",
+  "version": "0.4.1",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -310,7 +310,8 @@
     "package": "vsce package --no-dependencies",
     "wv:build": "cd webviews && pnpm run build",
     "wv:watch": "cd webviews && pnpm run build --watch",
-    "ts:watch": "tsc -watch -p ./"
+    "ts:watch": "tsc -watch -p ./",
+    "l10n:export": "node scripts/extract-l10n.mjs"
   },
   "devDependencies": {
     "@types/follow-redirects": "^1.14.4",
@@ -326,6 +327,7 @@
     "esbuild": "^0.24.0",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.15.0",
+    "glob": "^13.0.0",
     "http-proxy-agent": "^7.0.2",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.6.3"

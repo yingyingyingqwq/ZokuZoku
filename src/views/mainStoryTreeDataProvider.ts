@@ -87,7 +87,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                     items.push({
                         id: i.toString(),
                         tooltip: i.toString(),
-                        label: "Act " + i,
+                        label: vscode.l10n.t("Act {0}", i),
                         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
                     });
                 }

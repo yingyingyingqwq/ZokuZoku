@@ -4,6 +4,7 @@
     import { findNodeByPath, gotoNode } from "../utils";
     import { vscode } from "../vscode";
     import TextSlotInner from "./TextSlotInner.svelte";
+    import * as l10n from "@vscode/l10n";
 
     export let inner = TextSlotInner;
     export let content: string | null = null;
@@ -18,7 +19,7 @@
     export let tooltip = "";
 
     if (link) {
-        tooltip = tooltip ? tooltip + " (按住 Ctrl 并点击以跟随链接……)" : "按住 Ctrl 并点击以跟随链接……";
+        tooltip = tooltip ? tooltip + l10n.t(" (Ctrl + Click to follow link...)") : l10n.t("Ctrl + Click to follow link...");
     }
 
     let focused = false;
@@ -44,7 +45,7 @@
             });
             vscode.postMessage({
                 type: "showMessage",
-                content: `插槽 ${index} 已被设置为空字符串。`
+                content: l10n.t("Slot {0} has been set to an empty string.", index)
             });
         }
     }

@@ -1,9 +1,15 @@
 import '../app.css'
 import "@vscode/codicons/dist/codicon.css"
-import App from './App.svelte'
+import * as l10n from "@vscode/l10n"
 
-const app = new App({
-    target: document.getElementById('app')!,
-})
+if (window.l10nContents) {
+    l10n.config({
+        contents: window.l10nContents
+    });
+}
 
-export default app
+import('./App.svelte').then(({ default: App }) => {
+    new App({
+        target: document.getElementById('app')!,
+    })
+});

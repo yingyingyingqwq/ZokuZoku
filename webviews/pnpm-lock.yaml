@@ -11,6 +11,9 @@ importers:
       '@vscode/codicons':
         specifier: ^0.0.35
         version: 0.0.35
+      '@vscode/l10n':
+        specifier: ^0.0.18
+        version: 0.0.18
       hachimi_lib:
         specifier: github:Hachimi-Hachimi/hachimi_lib_js#823f1f018d3791d45a0d77cbc64acc3d1f35baf8
         version: https://codeload.github.com/Hachimi-Hachimi/hachimi_lib_js/tar.gz/823f1f018d3791d45a0d77cbc64acc3d1f35baf8
@@ -348,6 +351,9 @@ packages:
 
   '@vscode/codicons@0.0.35':
     resolution: {integrity: sha512-7iiKdA5wHVYSbO7/Mm0hiHD3i4h+9hKUe1O4hISAe/nHhagMwb2ZbFC8jU6d7Cw+JNT2dWXN2j+WHbkhT5/l2w==}
+
+  '@vscode/l10n@0.0.18':
+    resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
 
   acorn@8.11.3:
     resolution: {integrity: sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==}
@@ -919,6 +925,8 @@ snapshots:
   '@types/vscode-webview@1.57.5': {}
 
   '@vscode/codicons@0.0.35': {}
+
+  '@vscode/l10n@0.0.18': {}
 
   acorn@8.11.3: {}
 

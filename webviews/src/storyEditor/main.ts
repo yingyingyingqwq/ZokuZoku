@@ -1,12 +1,18 @@
 import '../app.css'
 import "@vscode/codicons/dist/codicon.css"
-import App from './App.svelte'
+import * as l10n from "@vscode/l10n"
 import initSync from "hachimi_lib";
+
+if (window.l10nContents) {
+    l10n.config({
+        contents: window.l10nContents
+    });
+}
 
 initSync();
 
-const app = new App({
-    target: document.getElementById('app')!,
-})
-
-export default app
+import('./App.svelte').then(({ default: App }) => {
+    new App({
+        target: document.getElementById('app')!,
+    })
+});
