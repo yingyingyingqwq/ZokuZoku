@@ -1,4 +1,6 @@
 <script lang="ts">
+    import * as l10n from "@vscode/l10n";
+
     export let src: string | undefined = undefined;
     export let hidden = false;
     export let audioElement: HTMLAudioElement | undefined;
@@ -13,7 +15,7 @@
     <audio controls controlsList="noplaybackrate nodownload" {src} bind:this={audioElement}>
         <slot />
     </audio>
-    <a role="button" tabindex="0" title="Close" class="codicon codicon-chrome-close close-btn" on:click={onClose}></a>
+    <a role="button" tabindex="0" title={l10n.t("Close")} class="codicon codicon-chrome-close close-btn" on:click={onClose}></a>
 </div>
 
 <style>

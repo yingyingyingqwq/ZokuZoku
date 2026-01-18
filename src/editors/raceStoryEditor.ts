@@ -73,7 +73,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             switch (message.type) {
                 case "init":
-                    postMessage({ type: "setExplorerTitle", title: "Race Story" });
+                    postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Race Story") });
                     // Just making sure to prevent data races
                     initReadPromise.finally(() => {
                         nodesPromise.then(nodes => {
@@ -114,13 +114,13 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                     prevEditPromise = prevEditPromise.then(async () => {
                         try {
                             if (json.ast.type !== "Array") {
-                                throw new Error("Root node is not an array");
+                                throw new Error(vscode.l10n.t("Root node is not an array"));
                             }
                             const applied = await json.applyEdit(
                                 makeEditForArray(json.ast, "", key, message.content)
                             );
                             if (!applied) {
-                                vscode.window.showErrorMessage("Failed to apply edit");
+                                vscode.window.showErrorMessage(vscode.l10n.t("Failed to apply edit"));
                             }
                         }
                         catch (e) {
@@ -135,12 +135,12 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                         loadVoicePromise = new Promise(async (resolve, reject) => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
-                                return reject(new Error("Voice data is not available for this story"));
+                                return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
                             }
                             const acbPath = await await assetHelper.ensureAssetDownloaded(hash, true);
                             vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
-                                title: "Decoding audio"
+                                title: vscode.l10n.t("Decoding audio")
                             }, async progress => {
                                 try {
                                     const acb = await ACB.fromFile(acbPath);
@@ -181,7 +181,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         const matches = filename?.match(/^(storyrace_\d{9})\.json$/);
         const assetName = matches?.[1];
         if (!assetName) {
-            throw new Error("Failed to parse asset name from filename");
+            throw new Error(vscode.l10n.t("Failed to parse asset name from filename"));
         }
 
         return {
@@ -197,7 +197,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
 
         const hash = await assetHelper.getAssetHash(assetBundleName);
         if (!hash) {
-            throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
+            throw new Error(vscode.l10n.t(`Could not find hash for asset bundle: {0}`, {0: assetBundleName}));
         }
         const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
@@ -206,7 +206,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         const metaKey = config().get<string>("decryption.metaKey");
 
         if (useDecryption && !metaPath) {
-            throw new Error("Decryption is enabled, but the meta path is not set.");
+            throw new Error(vscode.l10n.t("Decryption is enabled, but the meta path is not set."));
         }
 
         const absoluteAssetPath = resolvePath(assetPath);

@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import SQLite from "../sqlite";
 import path from "path";
 import fs from "fs/promises";
@@ -18,7 +19,8 @@ async function getAssetHash(name: string) {
 function getAssetPath(hash: string) {
     let gameDataDir = config().get<string>("gameDataDir");
     if (!gameDataDir) {
-        throw new Error("Attempted to load an asset file, but the game data directory is not set");
+        throw new Error(vscode.l10n.t(
+            'Attempted to load an asset file, but the game data directory is not set'));
     }
 
     let assetDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
@@ -66,7 +68,10 @@ async function loadGenericAsset(name: string): Promise<string> {
         return loadGenericAssetByHash(hash);
     }
     else {
-        throw new Error("Failed to resolve generic asset with name: " + name);
+        throw new Error(vscode.l10n.t(
+            'Failed to resolve generic asset with name: {0}',
+            {0: name}
+        ));
     }
 }
 
@@ -86,7 +91,10 @@ async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<
 
     const autoDownloadBundles = config().get<boolean>("autoDownloadBundles");
     if (!autoDownloadBundles) {
-        throw new Error(`Asset not found and auto-download is disabled: ${hash}`);
+        throw new Error(vscode.l10n.t(
+            'Asset not found and auto-download is disabled: {0}',
+            {0: hash}
+        ));
     }
 
     let downloadUrl: string;
@@ -105,7 +113,12 @@ async function ensureAssetDownloaded(hash: string, isGeneric: boolean): Promise<
     }
 
     await fs.mkdir(assetDir, { recursive: true });
-    await downloader.downloadToFile(downloadUrl, `Downloading ${assetType}: ${hash}`, assetPath, true);
+    await downloader.downloadToFile(
+        downloadUrl,
+        vscode.l10n.t('Downloading {0}: {1}', {0: assetType, 1: hash}),
+        assetPath,
+        true
+    );
 
     return assetPath;
 }

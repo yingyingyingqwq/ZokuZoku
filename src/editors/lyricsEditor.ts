@@ -64,7 +64,10 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
             switch (message.type) {
                 case "init":
-                    postMessage({ type: "setExplorerTitle", title: "Lyrics" });
+                    postMessage({
+                        type: "setExplorerTitle",
+                        title: vscode.l10n.t('Lyrics')
+                    });
                     // Just making sure to prevent data races
                     initReadPromise.finally(() => {
                         nodesPromise.then(nodes => {
@@ -107,7 +110,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
                                 makeEditForStringProperty(key, message.content)
                             );
                             if (!applied) {
-                                vscode.window.showErrorMessage("Failed to apply edit");
+                                vscode.window.showErrorMessage(
+                                    vscode.l10n.t('Failed to apply edit')
+                                );
                             }
                         }
                         catch (e) {
@@ -126,7 +131,9 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         const matches = filename?.match(/^(m\d{4})(_lyrics\.json)$/);
         const musicId = matches?.[1];
         if (!musicId) {
-            throw new Error("Failed to parse song index from filename");
+            throw new Error(
+                vscode.l10n.t('Failed to parse song index from filename')
+            );
         }
 
         const lyricsAssetName = musicId + "_lyrics";
@@ -134,7 +141,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
 
         const hash = await assetHelper.getAssetHash(assetBundleName);
         if (!hash) {
-            throw new Error(`Could not find hash for asset bundle: ${assetBundleName}`);
+            throw new Error(vscode.l10n.t('Could not find hash for asset bundle: {0}', {0: assetBundleName}));
         }
         const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
@@ -143,7 +150,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         const metaKey = config().get<string>("decryption.metaKey");
 
         if (useDecryption && !metaPath) {
-            throw new Error("Decryption is enabled, but the meta path is not set.");
+            throw new Error(vscode.l10n.t("Decryption is enabled, but the meta path is not set."));
         }
 
         const absoluteAssetPath = resolvePath(assetPath);
@@ -180,6 +187,11 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
     }
 
     protected override getHtmlForWebview(webview: vscode.Webview): string {
-        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", "Lyrics Editor");
+        return getEditorHtml(
+            this.context.extensionUri,
+            webview,
+            "commonEditor",
+            vscode.l10n.t('Lyrics Editor')
+        );
     }
 }

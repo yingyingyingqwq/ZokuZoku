@@ -58,7 +58,7 @@ export class LocalizedDataManager {
     private constructor() {
         let folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
         if (!folderUri) {
-            throw new Error("No workspace folder.");
+            throw new Error(vscode.l10n.t('No workspace folder.'));
         }
         this.dirUri = vscode.Uri.joinPath(folderUri, "localized_data");
         let configUri = vscode.Uri.joinPath(this.dirUri, "config.json");
@@ -93,7 +93,7 @@ export class LocalizedDataManager {
         .catch(reason => {
             console.error(reason);
             vscode.window.showWarningMessage(
-                "Failed to load config.json. It will be created or overwritten automatically when it's used."
+                vscode.l10n.t('Failed to load config.json. It will be created or overwritten automatically when it\'s used.')
             );
         })
         .finally(() => {
@@ -109,7 +109,7 @@ export class LocalizedDataManager {
     static async with(callback: (ldManager: LocalizedDataManager) => any) {
         let ldManager = LocalizedDataManager.instance;
         if (!ldManager) {
-            vscode.window.showErrorMessage("ZokuZoku is inactive.");
+            vscode.window.showErrorMessage(vscode.l10n.t('ZokuZoku is inactive.'));
             return;
         }
         

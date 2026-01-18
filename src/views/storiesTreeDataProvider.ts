@@ -3,6 +3,7 @@ import SQLite from '../sqlite';
 import { LocalizedDataManager, utils } from '../core';
 import RefreshableTreeDataProviderBase from './refreshableTreeDataProviderBase';
 import { whenReady } from '../extensionContext';
+import config from '../config';
 
 function queryCategories() {
     return SQLite.instance.queryMeta(
@@ -32,22 +33,22 @@ enum TreeLevel {
 }
 
 const categoryNames: {[key: string]: string} = {
-    "00": "> Short Episodes",
-    "01": "> Tutorials",
-    "02": "> Main Story",
-    "04": "> Umamusume Stories",
-    "08": "> Scenario Intros",
-    "09": "> Story Events",
-    "10": "> Anniv. Stories",
-    "11": "> G1 Outfit Episodes",
-    "12": "> New Year Short Episodes",
-    "13": "> Kirari Magic Show",
-    "14": "> The White Era",
-    "40": "> Scenario Career Events",
-    "50": "> Umamusume Career Events",
-    "80": "> Support Card Events (R)",
-    "82": "> Support Card Events (SR)",
-    "83": "> Support Card Events (SSR)"
+    "00": vscode.l10n.t("> Short Episodes"),
+    "01": vscode.l10n.t("> Tutorials"),
+    "02": vscode.l10n.t("> Main Story"),
+    "04": vscode.l10n.t("> Umamusume Stories"),
+    "08": vscode.l10n.t("> Scenario Intros"),
+    "09": vscode.l10n.t("> Story Events"),
+    "10": vscode.l10n.t("> Anniv. Stories"),
+    "11": vscode.l10n.t("> G1 Outfit Episodes"),
+    "12": vscode.l10n.t("> New Year Short Episodes"),
+    "13": vscode.l10n.t("Kirari Magic Show"),
+    "14": vscode.l10n.t("The White Era"),
+    "40": vscode.l10n.t("> Scenario Career Events"),
+    "50": vscode.l10n.t("> Umamusume Career Events"),
+    "80": vscode.l10n.t("> Support Card Events (R)"),
+    "82": vscode.l10n.t("> Support Card Events (SR)"),
+    "83": vscode.l10n.t("> Support Card Events (SSR)")
 };
 
 async function getGroupName(categoryId: string, groupId: string): Promise<string | undefined> {
@@ -75,6 +76,43 @@ async function getStoryName(categoryId: string, storyId: string) {
 export default class StoriesTreeDataProvider extends RefreshableTreeDataProviderBase implements vscode.TreeDataProvider<vscode.TreeItem> {
     private static _instance?: StoriesTreeDataProvider;
     static get instance(): StoriesTreeDataProvider | undefined { return this._instance; }
+
+    override refresh() {
+        utils.invalidateTranslatedTextDataCache();
+        super.refresh();
+    }
+
+    private async getGroupName(categoryId: string, groupId: string): Promise<string | undefined> {
+        switch (+categoryId) {
+            case 4:
+            case 50: {
+                if (config().get<boolean>("showTranslatedCharacterNames")) {
+                    const translatedData = await utils.getTranslatedTextData();
+                    if (translatedData && translatedData["6"]) {
+                        const translatedName = translatedData["6"][groupId];
+                        if (translatedName) {
+                            return translatedName;
+                        }
+                    }
+                }
+
+                const characterNames = await utils.getTextDataCategoryCached(6);
+                return characterNames[+groupId];
+            }
+            case 40:
+                return (await utils.getTextDataCategory(119))[+groupId]?.replaceAll("\\n", " ");
+        }
+    }
+
+    private async getStoryName(categoryId: string, storyId: string) {
+        switch (+categoryId) {
+            case 4:
+                return (await utils.getTextDataCategory(92))[+storyId];
+        }
+    
+        // Training events span across multiple categories
+        return (await utils.getTextDataCategoryCached(181))[+storyId];
+    }
 
     static register(context: vscode.ExtensionContext): vscode.Disposable {
         const treeDataProvider = new StoriesTreeDataProvider;
@@ -130,7 +168,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ groupId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}`;
                         let label = groupId;
-                        let name = await getGroupName(categoryId, groupId);
+                        let name = await this.getGroupName(categoryId, groupId);
                         if (name) {
                             label += ` ${name}`;
                         }
@@ -149,7 +187,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ storyId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}/${storyId}`;
                         let label = storyId.slice(6);
-                        let name = await getStoryName(categoryId, storyId);
+                        let name = await this.getStoryName(categoryId, storyId);
                         if (name) {
                             label += ` ${name}`;
                         }

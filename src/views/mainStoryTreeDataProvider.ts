@@ -87,7 +87,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                     items.push({
                         id: i.toString(),
                         tooltip: i.toString(),
-                        label: "Act " + i,
+                        label: vscode.l10n.t("Act {0}", i),
                         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
                     });
                 }
@@ -190,7 +190,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                         items.push({
                             id: itemId,
                             tooltip: itemId,
-                            label: "No translatable parts."
+                            label: vscode.l10n.t("No translatable parts.")
                         });
                     }
                     break;

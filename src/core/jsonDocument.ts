@@ -286,7 +286,7 @@ export class JsonDocument<T> extends vscode.Disposable {
 
     makeEdit(edit: JsonEdit<T>, wsEdit = new vscode.WorkspaceEdit, node = this.ast, indentLevel = 0): vscode.WorkspaceEdit {
         if (!this.readSuccessful) {
-            throw new Error("Document has not been read successfully, refusing to make edit");
+            throw new Error(vscode.l10n.t('Document has not been read successfully, refusing to make edit'));
         }
 
         if (isObjectOrArrayEdit(edit)) {
@@ -302,14 +302,14 @@ export class JsonDocument<T> extends vscode.Disposable {
                 case "object":
                     if (node.type !== "Object") {
                         console.error(node);
-                        throw new Error("JSON node type differs from schema");
+                        throw new Error(vscode.l10n.t('JSON node type differs from schema'));
                     }
                     switch (edit.action) {
                         case "update": {
                             const property = edit.property;
                             const props = this.astObjectsProps.get(node);
                             if (!props) {
-                                throw new Error("Attempted to perform object update on non-object node");
+                                throw new Error(vscode.l10n.t('Attempted to perform object update on non-object node'));
                             }
                             const stringKey = property.key.toString();
                             const propNode = props[stringKey];
@@ -324,7 +324,7 @@ export class JsonDocument<T> extends vscode.Disposable {
                                         setValue = edit.values;
                                     }
                                     else {
-                                        throw new Error("Attempted to perform update on missing property");
+                                        throw new Error(vscode.l10n.t('Attempted to perform update on missing property'));
                                     }
                                 }
                                 else {
@@ -345,7 +345,7 @@ export class JsonDocument<T> extends vscode.Disposable {
                 case "array":
                     if (node.type !== "Array") {
                         console.error(node);
-                        throw new Error("JSON node type differs from schema");
+                        throw new Error(vscode.l10n.t('JSON node type differs from schema'));
                     }
                     switch (edit.action) {
                         case "push":
@@ -355,7 +355,7 @@ export class JsonDocument<T> extends vscode.Disposable {
                         case "update": {
                             let childNode = node.children[edit.index];
                             if (!childNode) {
-                                throw new Error("Attempted to perform update on missing array element");
+                                throw new Error(vscode.l10n.t('Attempted to perform update on missing array element'));
                             }
                             this.makeEdit(edit.value, wsEdit, childNode, indentLevel + 1);
                             break;
