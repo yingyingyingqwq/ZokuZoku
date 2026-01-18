@@ -3,7 +3,6 @@ import json
 import UnityPy
 from pathlib import Path
 
-DB_KEY_DEFAULT = "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd"
 BUNDLE_BASE_KEY = "532b4631e4a7b9473e7cfb"
 
 def _create_final_key(bundle_key_int: int):
@@ -60,7 +59,7 @@ def handle_extract_race_story_data(params):
 
     text_asset_ptr = container[asset_name_in_bundle].asset
     text_asset = text_asset_ptr.read()
-    
+
     texts = [item.text for item in text_asset.textData]
     return {"texts": texts}
 
@@ -92,7 +91,10 @@ def handle_query_db(params):
     if not db_path:
         raise ValueError("'db_path' parameter is missing")
     query = params.get('query')
-    key = params.get('key') or DB_KEY_DEFAULT
+    key = params.get('key')
+
+    if not key:
+        raise ValueError("'key' parameter is missing for query_db")
 
     db_uri = Path(db_path).as_uri()
     conn_str = f"{db_uri}?mode=ro&hexkey={key}"

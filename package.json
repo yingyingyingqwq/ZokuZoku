@@ -336,7 +336,7 @@
     "csv-parser": "^2.3.5",
     "follow-redirects": "^1.15.6",
     "json-to-ast": "^2.1.0",
-    "pymport": "^1.5.1",
+    "pymport": "1.6.0-rc.2",
     "tar": "^6.2.1"
   }
 }

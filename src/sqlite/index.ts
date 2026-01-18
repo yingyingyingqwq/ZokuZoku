@@ -12,12 +12,16 @@ import { validateSqliteCommand } from "./sqliteCommandValidation";
 import { join, resolve as resolvePath } from "path";
 import config from "../config";
 import { queryEncryptedDb } from '../pythonBridge';
+import { META_KEY_GLOBAL, META_KEY_JP } from "../defines";
 
 class SQLite {
     private extensionPath: string;
     private sqliteCommand!: string;
     private mdbPath?: string;
     private metaPath?: string;
+
+    public static detectedGameVersion: "JP" | "GL" | "UNKNOWN" = "UNKNOWN";
+    private static detectedMetaKey: string | undefined;
 
     constructor(extensionPath: string, sqliteCommand: string, mdbPath?: string, metaPath?: string) {
         this.extensionPath = extensionPath;
@@ -35,6 +39,8 @@ class SQLite {
         let metaPath = gameDataDir ? join(gameDataDir, "meta") : undefined;
 
         this._instance = new SQLite(extensionPath, sqliteCommand, mdbPath, metaPath);
+        this.detectedMetaKey = undefined;
+        this.detectedGameVersion = "UNKNOWN";
     }
 
     static get instance(): SQLite {
@@ -46,6 +52,54 @@ class SQLite {
 
     getMetaPath(): string | undefined {
         return this.metaPath;
+    }
+
+    public static async getMetaKey(): Promise<string> {
+        if (this.detectedMetaKey) {
+            return this.detectedMetaKey;
+        }
+
+        if (!this.instance.metaPath) {
+            throw new Error("Cannot get meta key: game data directory is not set.");
+        }
+        const absoluteMetaPath = resolvePath(this.instance.metaPath);
+
+        const configuredKey = config().get<string>("decryption.metaKey")?.trim();
+
+        if (configuredKey) {
+            this.detectedGameVersion = "UNKNOWN";
+            this.detectedMetaKey = configuredKey;
+            return this.detectedMetaKey;
+        }
+
+        const testQuery = "SELECT n FROM c LIMIT 1";
+
+        try {
+            await queryEncryptedDb(absoluteMetaPath, testQuery, META_KEY_JP);
+            this.detectedGameVersion = "JP";
+            this.detectedMetaKey = META_KEY_JP;
+            return this.detectedMetaKey;
+        } catch (e) {
+            const err = e as Error;
+            const isDecryptionError = err.message.includes("SQLITE_NOTADB") ||
+                                      err.message.includes("database is encrypted") ||
+                                      err.message.includes("file is not a database");
+
+            if (isDecryptionError) {
+                try {
+                    await queryEncryptedDb(absoluteMetaPath, testQuery, META_KEY_GLOBAL);
+                    this.detectedGameVersion = "GL";
+                    this.detectedMetaKey = META_KEY_GLOBAL;
+                    return this.detectedMetaKey;
+                } catch (e2) {
+                    const err2 = e2 as Error;
+                    window.showErrorMessage(`Failed to decrypt meta DB. Tried JP and GL keys. Error: ${err2.message}`);
+                    throw err2;
+                }
+            }
+            window.showErrorMessage(`Failed to query encrypted meta DB: ${err.message}`);
+            throw err;
+        }
     }
 
     async query(dbPath: string, query: string, options?: QueryExecutionOptions): Promise<ResultSet> {
@@ -77,11 +131,9 @@ class SQLite {
             return this.query(this.metaPath, query, options);
         } else {
             try {
-                const metaKey = config().get<string>("decryption.metaKey") ?? "";
-
+                const key = await SQLite.getMetaKey();
                 const absoluteMetaPath = resolvePath(this.metaPath);
-
-                return await queryEncryptedDb(absoluteMetaPath, query, metaKey);
+                return await queryEncryptedDb(absoluteMetaPath, query, key);
             } catch (e) {
                 const err = e as Error;
                 window.showErrorMessage(`Failed to query encrypted meta DB: ${err.message}`);

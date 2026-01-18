@@ -6,6 +6,7 @@ import os from 'os';
 import { PathLike } from 'fs';
 import { spawn } from 'child_process';
 import config from '../config';
+import { STEAM_APP_ID_GLOBAL, STEAM_APP_ID_JP } from '../defines';
 
 export function addIndent(source: string, indent: string, addAtStart = false): string {
     if (indent.length) {
@@ -135,13 +136,16 @@ export async function getAllGameInstallPaths(): Promise<string[]> {
     catch {}
 
     if (os.platform() === 'win32') {
-        const steamAppId = '3564400';
-        const steamKey = `HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${steamAppId}`;
-        
-        const gamePath = await queryRegistry(steamKey, 'InstallLocation');
-        if (gamePath && await pathExists(gamePath)) {
-            if (!paths.includes(gamePath)) {
-                paths.push(gamePath);
+        const steamAppIds = [STEAM_APP_ID_JP, STEAM_APP_ID_GLOBAL];
+
+        for (const appId of steamAppIds) {
+            const steamKey = `HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${appId}`;
+            const gamePath = await queryRegistry(steamKey, 'InstallLocation');
+
+            if (gamePath && await pathExists(gamePath)) {
+                if (!paths.includes(gamePath)) {
+                    paths.push(gamePath);
+                }
             }
         }
     }
@@ -160,7 +164,7 @@ export async function getGameInstallPath(): Promise<string | undefined> {
         cachedInstallPath = allPaths[0];
         return cachedInstallPath;
     }
-    
+
     return undefined;
 }
 
@@ -204,12 +208,12 @@ export function expandEnvironmentVariables(pathString: string): string {
         });
     } else {
         let expandedPath = pathString.replace(/^~(?=$|\/|\\)/, os.homedir());
-        
+
         expandedPath = expandedPath.replace(/\$(?:(\w+)|\{([^}]+)\})/g, (match, varName, varNameInBraces) => {
             const actualVarName = varName || varNameInBraces;
             return process.env[actualVarName] || match;
         });
-        
+
         return expandedPath;
     }
 }

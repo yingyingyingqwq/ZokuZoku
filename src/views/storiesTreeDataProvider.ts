@@ -32,19 +32,22 @@ enum TreeLevel {
 }
 
 const categoryNames: {[key: string]: string} = {
-    "01": vscode.l10n.t("Tutorial"),
-    "02": vscode.l10n.t("Main Stories"),
-    "04": vscode.l10n.t("Character Stories"),
-    "08": vscode.l10n.t("Scenario Opening Stories"),
-    "09": vscode.l10n.t("Story Event Stories"),
-    "10": vscode.l10n.t("Anniversary Stories"),
-    "11": vscode.l10n.t("Special Event Dialogues"),
-    "12": vscode.l10n.t("New Year Lottery Dialogues"),
-    "40": vscode.l10n.t("Scenario Training Events"),
-    "50": vscode.l10n.t("Character Training Events"),
-    "80": vscode.l10n.t("Support Card Training Events#1"),
-    "82": vscode.l10n.t("Support Card Training Events#2"),
-    "83": vscode.l10n.t("Support Card Training Events#3"),
+    "00": vscode.l10n.t("> Short Episodes"),
+    "01": vscode.l10n.t("> Tutorials"),
+    "02": vscode.l10n.t("> Main Story"),
+    "04": vscode.l10n.t("> Umamusume Stories"),
+    "08": vscode.l10n.t("> Scenario Intros"),
+    "09": vscode.l10n.t("> Story Events"),
+    "10": vscode.l10n.t("> Anniv. Stories"),
+    "11": vscode.l10n.t("> G1 Outfit Episodes"),
+    "12": vscode.l10n.t("> New Year Short Episodes"),
+    "13": vscode.l10n.t("Kirari Magic Show"),
+    "14": vscode.l10n.t("The White Era"),
+    "40": vscode.l10n.t("> Scenario Career Events"),
+    "50": vscode.l10n.t("> Umamusume Career Events"),
+    "80": vscode.l10n.t("> Support Card Events (R)"),
+    "82": vscode.l10n.t("> Support Card Events (SR)"),
+    "83": vscode.l10n.t("> Support Card Events (SSR)")
 };
 
 async function getGroupName(categoryId: string, groupId: string): Promise<string | undefined> {

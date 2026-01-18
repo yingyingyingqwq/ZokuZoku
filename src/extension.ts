@@ -124,24 +124,25 @@ async function installUnityPy() {
     }
 }
 
-const USER_GAME_DATA_DIR = path.join(os.homedir(), "AppData", "LocalLow", "Cygames", "umamusume");
 const GAME_DATA_FILES = [ "meta", path.join("master", "master.mdb") ];
 
 async function checkGameDataDir() {
     if (config().get("gameDataDir")) { return; }
 
     const foundGameDataDirs: string[] = [];
+    const potentialDataDirs = new Set<string>();
 
-    const potentialDirs = new Set<string>();
-    potentialDirs.add(USER_GAME_DATA_DIR);
+    const localLowBase = path.join(os.homedir(), "AppData", "LocalLow", "Cygames");
+    potentialDataDirs.add(path.join(localLowBase, "Umamusume"));
+    potentialDataDirs.add(path.join(localLowBase, "umamusume"));
 
     const installPaths = await getAllGameInstallPaths();
     for (const installPath of installPaths) {
-        potentialDirs.add(path.join(installPath, "umamusume_Data", "Persistent"));
-        potentialDirs.add(path.join(installPath, "UmamusumePrettyDerby_Jpn_Data", "Persistent"));
+        potentialDataDirs.add(path.join(installPath, "umamusume_Data", "Persistent"));
+        potentialDataDirs.add(path.join(installPath, "UmamusumePrettyDerby_Jpn_Data", "Persistent"));
     }
 
-    for (const dir of potentialDirs) {
+    for (const dir of potentialDataDirs) {
         let isDirValid = true;
         for (const file of GAME_DATA_FILES) {
             try {
@@ -221,7 +222,7 @@ async function checkLocalizeDictDump() {
     }
 
     if (foundDumpPaths.length > 1) {
-        const selectedPath = await vscode.window.showQuickPick(foundDumpPaths, { 
+        const selectedPath = await vscode.window.showQuickPick(foundDumpPaths, {
             placeHolder: "Multiple localize_dump.json files found. Please select which one to use.",
             ignoreFocusOut: true
         });
@@ -262,7 +263,7 @@ async function activateCore(context: vscode.ExtensionContext) {
     const { registerCommands } = await import("./commands.js");
     const { registerEditors } = await import("./editors/index.js");
     const { registerViews } = await import("./views/index.js");
-    
+
     const disposables = [
         ...registerCommands(context),
         ...registerEditors(context),
@@ -288,7 +289,7 @@ async function registerCoreComponents(context: vscode.ExtensionContext) {
     const { registerCommands } = await import("./commands.js");
     const { registerEditors } = await import("./editors/index.js");
     const { registerViews } = await import("./views/index.js");
-    
+
     context.subscriptions.push(
         ...registerCommands(context),
         ...registerEditors(context),
