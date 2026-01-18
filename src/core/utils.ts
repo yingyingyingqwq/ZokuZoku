@@ -7,6 +7,7 @@ import { PathLike } from 'fs';
 import { spawn } from 'child_process';
 import config from '../config';
 import { STEAM_APP_ID_GLOBAL, STEAM_APP_ID_JP } from '../defines';
+import { LocalizedDataManager } from './localizedDataManager';
 
 export function addIndent(source: string, indent: string, addAtStart = false): string {
     if (indent.length) {
@@ -22,6 +23,32 @@ export function addIndent(source: string, indent: string, addAtStart = false): s
     else {
         return source;
     }
+}
+
+let _translatedTextDataCache: any = undefined;
+
+export function invalidateTranslatedTextDataCache() {
+    _translatedTextDataCache = undefined;
+}
+
+export async function getTranslatedTextData(): Promise<any> {
+    if (_translatedTextDataCache === undefined) {
+         const ldManager = await LocalizedDataManager.instancePromise;
+         const uri = await ldManager.getPathUri("text_data_dict");
+         if (uri && await uriExists(uri)) {
+             try {
+                 const data = await vscode.workspace.fs.readFile(uri);
+                 const str = Buffer.from(data).toString('utf8');
+                 _translatedTextDataCache = JSON.parse(str);
+             } catch (e) {
+                 console.error(e);
+                 _translatedTextDataCache = null;
+             }
+         } else {
+             _translatedTextDataCache = null;
+         }
+    }
+    return _translatedTextDataCache;
 }
 
 export async function getTextDataCategory(category: number) {

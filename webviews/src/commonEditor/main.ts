@@ -9,7 +9,14 @@ if (window.l10nContents) {
 }
 
 import('./App.svelte').then(({ default: App }) => {
-    new App({
-        target: document.getElementById('app')!,
-    })
+    // i really dont know why the app is mounted twice so i do this
+    const target = document.getElementById('app')!;
+    // @ts-ignore
+    if (!window.__zokuzoku_app_mounted && target.children.length === 0) {
+        // @ts-ignore
+        window.__zokuzoku_app_mounted = true;
+        new App({
+            target,
+        })
+    }
 });

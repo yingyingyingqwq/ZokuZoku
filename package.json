@@ -298,6 +298,11 @@
           "default": "",
           "description": "%config.decryptionMetakey.description%",
           "format": "password"
+        },
+        "zokuzoku.showTranslatedCharacterNames": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.showTranslatedCharacterNames.description%"
         }
       }
     }

@@ -12,7 +12,13 @@ if (window.l10nContents) {
 initSync();
 
 import('./App.svelte').then(({ default: App }) => {
-    new App({
-        target: document.getElementById('app')!,
-    })
+    const target = document.getElementById('app')!;
+    // @ts-ignore
+    if (!window.__zokuzoku_app_mounted && target.children.length === 0) {
+        // @ts-ignore
+        window.__zokuzoku_app_mounted = true;
+        new App({
+            target,
+        })
+    }
 });

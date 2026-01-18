@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { getEditorHtml, makeEditForStringProperty } from './utils';
 import { ControllerMessage, EditorMessage, IEntryTreeNode, ITreeNode, TreeNodeId } from './sharedTypes';
 import { JsonDocument, utils } from '../core';
+import config from '../config';
 import textDataCategories from './mdbTextDataCategories';
 import SQLite, { MDB_TABLE_COLUMNS, MDB_TABLE_NAMES, MdbTableName } from '../sqlite';
 import fontHelper from './fontHelper';
@@ -11,6 +12,15 @@ import { whenReady } from '../extensionContext';
 const TABLE_CATEGORIZERS: {[K in MdbTableName]?: (column: string) => Promise<string> | string} = {
     "text_data": category => `${category} ${textDataCategories[category] ?? ""}`,
     "character_system_text": async characterId => {
+        if (config().get<boolean>("showTranslatedCharacterNames")) {
+            const translatedData = await utils.getTranslatedTextData();
+            if (translatedData && translatedData["6"]) {
+                const translatedName = translatedData["6"][characterId];
+                if (translatedName) {
+                    return translatedName;
+                }
+            }
+        }
         const characterNames = await utils.getTextDataCategoryCached(6);
         return characterNames[+characterId] ?? characterId;
     }
@@ -334,7 +344,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
     }
 
     protected override getHtmlForWebview(webview: vscode.Webview): string {
-        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", vscode.l10n.t('Lyrics Editor'));
+        return getEditorHtml(this.context.extensionUri, webview, "commonEditor", vscode.l10n.t('MDB Editor'));
     }
 }
 

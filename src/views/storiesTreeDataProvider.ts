@@ -3,6 +3,7 @@ import SQLite from '../sqlite';
 import { LocalizedDataManager, utils } from '../core';
 import RefreshableTreeDataProviderBase from './refreshableTreeDataProviderBase';
 import { whenReady } from '../extensionContext';
+import config from '../config';
 
 function queryCategories() {
     return SQLite.instance.queryMeta(
@@ -76,6 +77,43 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
     private static _instance?: StoriesTreeDataProvider;
     static get instance(): StoriesTreeDataProvider | undefined { return this._instance; }
 
+    override refresh() {
+        utils.invalidateTranslatedTextDataCache();
+        super.refresh();
+    }
+
+    private async getGroupName(categoryId: string, groupId: string): Promise<string | undefined> {
+        switch (+categoryId) {
+            case 4:
+            case 50: {
+                if (config().get<boolean>("showTranslatedCharacterNames")) {
+                    const translatedData = await utils.getTranslatedTextData();
+                    if (translatedData && translatedData["6"]) {
+                        const translatedName = translatedData["6"][groupId];
+                        if (translatedName) {
+                            return translatedName;
+                        }
+                    }
+                }
+
+                const characterNames = await utils.getTextDataCategoryCached(6);
+                return characterNames[+groupId];
+            }
+            case 40:
+                return (await utils.getTextDataCategory(119))[+groupId]?.replaceAll("\\n", " ");
+        }
+    }
+
+    private async getStoryName(categoryId: string, storyId: string) {
+        switch (+categoryId) {
+            case 4:
+                return (await utils.getTextDataCategory(92))[+storyId];
+        }
+    
+        // Training events span across multiple categories
+        return (await utils.getTextDataCategoryCached(181))[+storyId];
+    }
+
     static register(context: vscode.ExtensionContext): vscode.Disposable {
         const treeDataProvider = new StoriesTreeDataProvider;
         StoriesTreeDataProvider._instance = treeDataProvider;
@@ -130,7 +168,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ groupId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}`;
                         let label = groupId;
-                        let name = await getGroupName(categoryId, groupId);
+                        let name = await this.getGroupName(categoryId, groupId);
                         if (name) {
                             label += ` ${name}`;
                         }
@@ -149,7 +187,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ storyId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}/${storyId}`;
                         let label = storyId.slice(6);
-                        let name = await getStoryName(categoryId, storyId);
+                        let name = await this.getStoryName(categoryId, storyId);
                         if (name) {
                             label += ` ${name}`;
                         }
