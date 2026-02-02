@@ -25,7 +25,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup
-        let json = new JsonDocument<string[] | null>(document.uri, null, () => {
+        const json = new JsonDocument<string[] | null>(document.uri, null, () => {
             const subscribedKey = this.subscribedPath[0];
             const content = getDictValue(subscribedKey);
             postMessage({
@@ -42,7 +42,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         });
         this.disposables.push(json);
 
-        let initReadPromise = json.readTextDocument().catch(_ => {});
+        const initReadPromise = json.readTextDocument().catch(_ => { });
         json.watchTextDocument(document);
         function getDictProperty(id: TreeNodeId): jsonToAst.ValueNode | undefined {
             id = Number(id);
@@ -55,9 +55,9 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                 null :
                 valueNode.value;
         }
-        
+
         // Init webview
-        let assetInfo = RaceStoryEditorProvider.parseFilename(document.uri);
+        const assetInfo = RaceStoryEditorProvider.parseFilename(document.uri);
         this.setupWebview(webviewPanel, [
             vscode.Uri.file(assetInfo.voiceCacheDir)
         ]);
@@ -68,8 +68,8 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         }
 
         let prevEditPromise = Promise.resolve();
-        let nodesPromise = RaceStoryEditorProvider.generateNodes(assetInfo);
-        let loadVoicePromise: Promise<{[key: string]: string}> | undefined;
+        const nodesPromise = RaceStoryEditorProvider.generateNodes(assetInfo);
+        let loadVoicePromise: Promise<{ [key: string]: string }> | undefined;
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             switch (message.type) {
                 case "init":
@@ -80,13 +80,13 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                             postMessage({ type: "setNodes", nodes });
                             postMessage({ type: "enableVoicePlayer" });
                         })
-                        .catch(e => vscode.window.showErrorMessage("" + e));
+                            .catch(e => vscode.window.showErrorMessage("" + e));
                     });
                     fontHelper.onInit(webviewPanel.webview);
                     break;
-                
+
                 case "getTextSlotContent": {
-                    let key = message.entryPath[0];
+                    const key = message.entryPath[0];
                     postMessage({
                         type: "setTextSlotContent",
                         entryPath: message.entryPath,
@@ -95,9 +95,9 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                     });
                     break;
                 }
-                
+
                 case "getExists": {
-                    let key = message.path[0];
+                    const key = message.path[0];
                     postMessage({
                         type: "setExists",
                         path: message.path,
@@ -107,7 +107,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
                 }
 
                 case "setTextSlotContent": {
-                    let key = Number(message.entryPath[0]);
+                    const key = Number(message.entryPath[0]);
                     if (isNaN(key)) { break; }
 
                     // Wait for previous edit to finish before applying another
@@ -132,39 +132,34 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
 
                 case "loadVoice":
                     if (!loadVoicePromise || !(await pathExists(assetInfo.voiceCacheDir))) {
-                        loadVoicePromise = new Promise(async (resolve, reject) => {
+                        loadVoicePromise = (async () => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
-                                return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
+                                throw new Error(vscode.l10n.t("Voice data is not available for this story"));
                             }
-                            const acbPath = await await assetHelper.ensureAssetDownloaded(hash, true);
-                            vscode.window.withProgress({
+                            const acbPath = await assetHelper.ensureAssetDownloaded(hash, true);
+                            return vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: vscode.l10n.t("Decoding audio")
                             }, async progress => {
-                                try {
-                                    const acb = await ACB.fromFile(acbPath);
-                                    const paths = await acb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
-                                        progress.report({
-                                            message: `${current}/${total}`,
-                                            increment: current ? (1 / total) * 100 : 0
-                                        });
+                                const acb = await ACB.fromFile(acbPath);
+                                const paths = await acb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
+                                    progress.report({
+                                        message: `${current}/${total}`,
+                                        increment: current ? (1 / total) * 100 : 0
                                     });
-                                    const uris = Object.fromEntries(paths.map((v, i) => [
-                                        i.toString(),
-                                        webviewPanel.webview.asWebviewUri(vscode.Uri.file(v)).toString()
-                                    ]));
-                                    resolve(uris);
-                                }
-                                catch (e) {
-                                    reject(e);
-                                }
+                                });
+                                const uris = Object.fromEntries(paths.map((v, i) => [
+                                    i.toString(),
+                                    webviewPanel.webview.asWebviewUri(vscode.Uri.file(v)).toString()
+                                ]));
+                                return uris;
                             });
-                        });
+                        })();
                     }
                     loadVoicePromise
-                    .then(uris => postMessage({ type: "loadVoice", uris }))
-                    .catch(e => vscode.window.showErrorMessage("" + e));
+                        .then(uris => postMessage({ type: "loadVoice", uris }))
+                        .catch(e => vscode.window.showErrorMessage("" + e));
                     break;
             }
         });
@@ -197,7 +192,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
 
         const hash = await assetHelper.getAssetHash(assetBundleName);
         if (!hash) {
-            throw new Error(vscode.l10n.t(`Could not find hash for asset bundle: {0}`, {0: assetBundleName}));
+            throw new Error(vscode.l10n.t(`Could not find hash for asset bundle: {0}`, { 0: assetBundleName }));
         }
         const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
@@ -215,7 +210,7 @@ export class RaceStoryEditorProvider extends EditorBase implements vscode.Custom
         const raceData = await extractRaceStoryData({
             assetPath: absoluteAssetPath,
             assetName: assetName,
-            useDecryption: useDecryption,
+            useDecryption: useDecryption ?? false,
             metaPath: absoluteMetaPath,
             bundleHash: hash,
             metaKey: metaKey

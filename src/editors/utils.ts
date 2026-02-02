@@ -12,7 +12,7 @@ export function getNonce(): string {
 }
 
 export function getAssetUris(extensionUri: vscode.Uri, webview: vscode.Webview, pageName: string) {
-    let distAssetsUri = vscode.Uri.joinPath(extensionUri, "webviews", "dist", "assets");
+    const distAssetsUri = vscode.Uri.joinPath(extensionUri, "webviews", "dist", "assets");
     return {
         scriptUri: webview.asWebviewUri(vscode.Uri.joinPath(distAssetsUri, `${pageName}.js`)),
         styleUri: webview.asWebviewUri(vscode.Uri.joinPath(distAssetsUri, `${pageName}.css`))
@@ -20,7 +20,7 @@ export function getAssetUris(extensionUri: vscode.Uri, webview: vscode.Webview, 
 }
 
 export function getEditorHtml(extensionUri: vscode.Uri, webview: vscode.Webview, pageName: string, pageTitle: string) {
-    let { scriptUri, styleUri } = getAssetUris(extensionUri, webview, pageName);
+    const { scriptUri, styleUri } = getAssetUris(extensionUri, webview, pageName);
 
     let l10nContents = {};
     if (vscode.l10n.uri) {

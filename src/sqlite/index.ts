@@ -33,10 +33,10 @@ class SQLite {
     private static _instance?: SQLite;
 
     static init(extensionPath: string) {
-        let sqliteCommand = config().get<string>("sqlite3") ?? "sqlite3";
-        let gameDataDir = config().get<string>("gameDataDir");
-        let mdbPath = gameDataDir ? join(gameDataDir, "master", "master.mdb") : undefined;
-        let metaPath = gameDataDir ? join(gameDataDir, "meta") : undefined;
+        const sqliteCommand = config().get<string>("sqlite3") ?? "sqlite3";
+        const gameDataDir = config().get<string>("gameDataDir");
+        const mdbPath = gameDataDir ? join(gameDataDir, "master", "master.mdb") : undefined;
+        const metaPath = gameDataDir ? join(gameDataDir, "meta") : undefined;
 
         this._instance = new SQLite(extensionPath, sqliteCommand, mdbPath, metaPath);
         this.detectedMetaKey = undefined;
@@ -146,7 +146,7 @@ class SQLite {
         try {
             this.sqliteCommand = validateSqliteCommand(sqliteCommand, this.extensionPath);
         } catch (e) {
-            let message = (e as Error).message;
+            const message = (e as Error).message;
             console.error(message);
             window.showErrorMessage(message);
             this.sqliteCommand = "";

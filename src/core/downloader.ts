@@ -18,8 +18,8 @@ function downloadToStream(url: string | URL, title: string, output: Writable): T
                     return;
                 }
 
-                let clHeader = res.headers['content-length'];
-                let contentLength = clHeader ? parseInt(clHeader, 10) : 100000;
+                const clHeader = res.headers['content-length'];
+                const contentLength = clHeader ? parseInt(clHeader, 10) : 100000;
 
                 res.on("data", c => {
                     const chunk = c as Buffer;

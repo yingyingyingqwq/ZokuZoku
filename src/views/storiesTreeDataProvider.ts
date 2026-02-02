@@ -145,7 +145,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
             const result = await queryCategories();
             for (const [ id ] of result[0].rows) {
                 let label = id;
-                let name = categoryNames[id];
+                const name = categoryNames[id];
                 if (name) {
                     label += ` ${name}`;
                 }
@@ -168,7 +168,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ groupId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}`;
                         let label = groupId;
-                        let name = await this.getGroupName(categoryId, groupId);
+                        const name = await this.getGroupName(categoryId, groupId);
                         if (name) {
                             label += ` ${name}`;
                         }
@@ -187,7 +187,7 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
                     for (const [ storyId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}/${storyId}`;
                         let label = storyId.slice(6);
-                        let name = await this.getStoryName(categoryId, storyId);
+                        const name = await this.getStoryName(categoryId, storyId);
                         if (name) {
                             label += ` ${name}`;
                         }

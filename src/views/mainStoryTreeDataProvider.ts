@@ -76,9 +76,9 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
         const items: vscode.TreeItem[] = [];
         if (!element) {
             // Acts
-            let result = await queryAllChapters();
-            let chapterRows = result[0].rows;
-            let lastChapter = chapterRows?.[chapterRows.length - 1]?.[0];
+            const result = await queryAllChapters();
+            const chapterRows = result[0].rows;
+            const lastChapter = chapterRows?.[chapterRows.length - 1]?.[0];
             if (lastChapter !== undefined) {
                 let actCount = Math.floor(+lastChapter / 10);
                 if (actCount < 1) { actCount = 1; }
@@ -103,7 +103,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                     const chapterNames = await utils.getTextDataCategory(93);
                     const result = await queryChapters(+actNum);
 
-                    for (let [ chapterId ] of result[0].rows) {
+                    for (const [ chapterId ] of result[0].rows) {
                         const itemId = `${actNum}/${chapterId}`;
                         items.push({
                             id: itemId,
@@ -119,7 +119,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                     const episodeNames = await utils.getTextDataCategory(94);
                     const result = await queryEpisodes(+chapterId);
 
-                    for (let [ id, episodeIndex ] of result[0].rows) {
+                    for (const [ id, episodeIndex ] of result[0].rows) {
                         const itemId = `${actNum}/${chapterId}/${id}`;
                         items.push({
                             id: itemId,

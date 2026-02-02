@@ -9,7 +9,7 @@ async function getGameFontUri() {
         throw new Error(vscode.l10n.t("Could not find hash for game font asset."));
     }
 
-    let assetPath = await assetHelper.ensureAssetDownloaded(fontHash, true);
+    const assetPath = await assetHelper.ensureAssetDownloaded(fontHash, true);
     return vscode.Uri.file(assetPath);
 }
 

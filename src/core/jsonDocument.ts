@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import jsonToAst from "json-to-ast";
-import { utils } from '.';
+import * as utils from './utils.js';
 
 export type JsonEdit<T> =
     (T extends Array<infer R> ? JsonArrayEdit<R> :
@@ -75,7 +75,7 @@ export class JsonDocument<T> extends vscode.Disposable {
         this.astObjectsProps.clear();
         this.visit(node => {
             if (node.type === "Object") {
-                let props: {[key: string]: jsonToAst.PropertyNode} = {};
+                const props: {[key: string]: jsonToAst.PropertyNode} = {};
                 for (const child of node.children) {
                     props[child.key.value] = child;
                 }
@@ -105,8 +105,8 @@ export class JsonDocument<T> extends vscode.Disposable {
 
     watchFileSystem() {
         // Detect file changes in fs (will not trigger when editing, only on save)
-        let pattern = new vscode.RelativePattern(this.uri, "*");
-        let watcher = vscode.workspace.createFileSystemWatcher(pattern);
+        const pattern = new vscode.RelativePattern(this.uri, "*");
+        const watcher = vscode.workspace.createFileSystemWatcher(pattern);
         watcher.onDidCreate(() => this.readFile().catch(_ => {}));
         watcher.onDidChange(() => this.readFile().catch(_ => {}));
         watcher.onDidDelete(() => this.loadDefault());
@@ -133,8 +133,8 @@ export class JsonDocument<T> extends vscode.Disposable {
 
     async readFile() {
         try {
-            let buffer = await vscode.workspace.fs.readFile(this.uri);
-            let json = new TextDecoder().decode(buffer);
+            const buffer = await vscode.workspace.fs.readFile(this.uri);
+            const json = new TextDecoder().decode(buffer);
             this.ast = jsonToAst(json);
             this.readSuccessful = true;
         }
@@ -147,7 +147,7 @@ export class JsonDocument<T> extends vscode.Disposable {
 
     async readTextDocument() {
         try {
-            let document = await vscode.workspace.openTextDocument(this.uri);
+            const document = await vscode.workspace.openTextDocument(this.uri);
             this.ast = jsonToAst(document.getText());
             this.readSuccessful = true;
         }
@@ -180,8 +180,8 @@ export class JsonDocument<T> extends vscode.Disposable {
     }
 
     private nodeReplace(wsEdit: vscode.WorkspaceEdit, node: jsonToAst.ASTNode, value: any, indentLevel: number) {
-        let indent = " ".repeat(indentLevel * BASE_INDENT);
-        let json = utils.addIndent(JSON.stringify(value, null, BASE_INDENT), indent);
+        const indent = " ".repeat(indentLevel * BASE_INDENT);
+        const json = utils.addIndent(JSON.stringify(value, null, BASE_INDENT), indent);
         wsEdit.replace(this.uri, rangeConv(node.loc!), json);
     }
 
@@ -250,7 +250,7 @@ export class JsonDocument<T> extends vscode.Disposable {
             // if it was not found, i = children.length -> target = undefined
         }
 
-        let target = node.children.at(i);
+        const target = node.children.at(i);
         if (!target) { return; }
 
         const children = node.children;
@@ -353,7 +353,7 @@ export class JsonDocument<T> extends vscode.Disposable {
                             break;
                         
                         case "update": {
-                            let childNode = node.children[edit.index];
+                            const childNode = node.children[edit.index];
                             if (!childNode) {
                                 throw new Error(vscode.l10n.t('Attempted to perform update on missing array element'));
                             }
@@ -397,7 +397,7 @@ export class JsonDocument<T> extends vscode.Disposable {
         if (options.save && !document) {
             document = await vscode.workspace.openTextDocument(this.uri);
         }
-        let res = await vscode.workspace.applyEdit(this.makeEdit(data));
+        const res = await vscode.workspace.applyEdit(this.makeEdit(data));
         if (options.save) {
             document!.save();
         }
@@ -407,7 +407,7 @@ export class JsonDocument<T> extends vscode.Disposable {
     static getValue(node: jsonToAst.ValueNode): any {
         switch (node.type) {
             case "Object": {
-                let value: {[key: string]: any} = {};
+                const value: {[key: string]: any} = {};
                 for (const child of node.children) {
                     value[child.key.value] = this.getValue(child.value);
                 }
@@ -415,7 +415,7 @@ export class JsonDocument<T> extends vscode.Disposable {
             }
             
             case "Array": {
-                let value: any[] = [];
+                const value: any[] = [];
                 for (const child of node.children) {
                     value.push(this.getValue(child));
                 }
@@ -436,12 +436,12 @@ export class JsonDocument<T> extends vscode.Disposable {
             await vscode.workspace.fs.stat(this.uri);
         }
         catch {
-            let edit = new vscode.WorkspaceEdit;
+            const edit = new vscode.WorkspaceEdit;
             edit.createFile(this.uri);
             await vscode.workspace.applyEdit(edit);
         }
-        let document = await vscode.workspace.openTextDocument(this.uri);
-        let edit = new vscode.WorkspaceEdit;
+        const document = await vscode.workspace.openTextDocument(this.uri);
+        const edit = new vscode.WorkspaceEdit;
         edit.replace(
             this.uri,
             new vscode.Range(0, 0, document.lineCount, 0),

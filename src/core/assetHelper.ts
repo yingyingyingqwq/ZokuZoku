@@ -10,20 +10,20 @@ import { whenReady } from '../extensionContext';
 
 async function getAssetHash(name: string) {
     await whenReady;
-    let sqlite = SQLite.instance;
-    let query = `SELECT h FROM a WHERE n = '${name.replace("'", "")}'`;
-    let queryRes = await sqlite.queryMeta(query);
+    const sqlite = SQLite.instance;
+    const query = `SELECT h FROM a WHERE n = '${name.replace("'", "")}'`;
+    const queryRes = await sqlite.queryMeta(query);
     return queryRes.at(0)?.rows.at(0)?.at(0);
 }
 
 function getAssetPath(hash: string) {
-    let gameDataDir = config().get<string>("gameDataDir");
+    const gameDataDir = config().get<string>("gameDataDir");
     if (!gameDataDir) {
         throw new Error(vscode.l10n.t(
             'Attempted to load an asset file, but the game data directory is not set'));
     }
 
-    let assetDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
+    const assetDir = path.join(gameDataDir, "dat", hash.slice(0, 2));
     return {
         assetDir,
         assetPath: path.join(assetDir, hash)
@@ -32,8 +32,8 @@ function getAssetPath(hash: string) {
 
 const META_PLATFORM_QUERY = `SELECT n FROM c WHERE n = '//Android' OR n = '//Windows'`;
 async function getMetaPlatform(): Promise<string | undefined> {
-    let sqlite = SQLite.instance;
-    let queryRes = await sqlite.queryMeta(META_PLATFORM_QUERY);
+    const sqlite = SQLite.instance;
+    const queryRes = await sqlite.queryMeta(META_PLATFORM_QUERY);
     return queryRes.at(0)?.rows.at(0)?.at(0)?.slice(2);
 }
 
@@ -63,7 +63,7 @@ async function getBundleDownloadUrl(platform: string, hash: string) {
 }
 
 async function loadGenericAsset(name: string): Promise<string> {
-    let hash = await getAssetHash(name);
+    const hash = await getAssetHash(name);
     if (hash) {
         return loadGenericAssetByHash(hash);
     }

@@ -114,7 +114,7 @@ export default class HomeStoriesTreeDataProvider extends RefreshableTreeDataProv
                     for (const [ charaId ] of result[0].rows) {
                         const itemId = `${categoryId}/${groupId}/${charaId}`;
                         let label = charaId;
-                        let name = await getCharaName(charaId);
+                        const name = await getCharaName(charaId);
                         if (name) {
                             label += ` ${name}`;
                         }

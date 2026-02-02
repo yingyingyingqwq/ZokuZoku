@@ -1,15 +1,17 @@
 {
-  "name": "zokuzoku",
+  "name": "zokuzoku-edge",
   "displayName": "%extension.displayName%",
-  "publisher": "LeadRDRK",
+  "publisher": "THShafi170",
   "description": "%extension.description%",
   "repository": {
-    "url": "https://github.com/Hachimi-Hachimi/ZokuZoku"
+    "url": "https://github.com/THShafi170/ZokuZoku-Edge"
   },
-  "version": "0.4.1",
+  "version": "1.1.0",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.96.0",
+    "node": ">=22"
   },
+  "packageManager": "pnpm@10.27.0",
   "categories": [
     "Other"
   ],
@@ -308,10 +310,11 @@
     }
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "vscode:prepublish": "pnpm run compile",
     "compile": "pnpm run wv:build && node build.mjs",
     "watch": "run-p wv:watch ts:watch",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "package": "vsce package --no-dependencies",
     "wv:build": "cd webviews && pnpm run build",
     "wv:watch": "cd webviews && pnpm run build --watch",
@@ -319,31 +322,33 @@
     "l10n:export": "node scripts/extract-l10n.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/follow-redirects": "^1.14.4",
     "@types/json-to-ast": "^2.1.4",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "20.x",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
     "@types/tar": "^6.1.13",
-    "@types/vscode": "^1.88.0",
+    "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
     "@vscode/l10n-dev": "^0.0.35",
-    "@vscode/vsce": "^3.2.1",
-    "esbuild": "^0.24.0",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.25.0",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.15.0",
+    "eslint": "^9.18.0",
     "glob": "^13.0.0",
     "http-proxy-agent": "^7.0.2",
     "npm-run-all": "^4.1.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.54.0"
   },
   "dependencies": {
     "cricodecs": "^1.0.2",
-    "csv-parse": "^5.5.5",
-    "csv-parser": "^2.3.5",
-    "follow-redirects": "^1.15.6",
+    "csv-parse": "^6.1.0",
+    "csv-parser": "^3.2.0",
+    "follow-redirects": "^1.15.11",
     "json-to-ast": "^2.1.0",
     "pymport": "1.6.0-rc.2",
-    "tar": "^6.2.1"
+    "tar": "^7.5.7"
   }
 }

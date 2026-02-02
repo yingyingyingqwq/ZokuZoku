@@ -27,7 +27,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup
-        let json = new JsonDocument<StoryTimelineDataDict | null>(document.uri, null, async () => {
+        const json = new JsonDocument<StoryTimelineDataDict | null>(document.uri, null, async () => {
             const subscribedKey = this.subscribedPath[0];
             if (subscribedKey === "title") {
                 const content = await getDictValue(subscribedKey);
@@ -71,7 +71,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         });
         this.disposables.push(json);
 
-        let initReadPromise = json.readTextDocument().catch(_ => {});
+        const initReadPromise = json.readTextDocument().catch(_ => { });
         json.watchTextDocument(document);
         async function getDictValueNode(id: TreeNodeId, index?: number): Promise<jsonToAst.ValueNode | undefined> {
             if (json.ast.type !== "Object") { return; }
@@ -82,17 +82,17 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             id = Number(id);
             if (isNaN(id)) { return; }
 
-            let textBlockList = json.astObjectsProps.get(json.ast)?.text_block_list?.value;
+            const textBlockList = json.astObjectsProps.get(json.ast)?.text_block_list?.value;
             if (!textBlockList || textBlockList.type !== "Array") { return; }
 
-            let textBlock = textBlockList.children.at(id);
+            const textBlock = textBlockList.children.at(id);
             if (!textBlock || textBlock.type !== "Object") { return; }
 
             if (index === undefined) {
                 return textBlock;
             }
 
-            let textBlockProps = json.astObjectsProps.get(textBlock);
+            const textBlockProps = json.astObjectsProps.get(textBlock);
             if (!textBlockProps) { return; }
 
             const ranges = (await dataPromise).contentRanges[id];
@@ -144,9 +144,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 }
             });
         }
-        
+
         // Init webview
-        let assetInfo = StoryEditorProvider.parseFilename(document.uri);
+        const assetInfo = StoryEditorProvider.parseFilename(document.uri);
         this.setupWebview(webviewPanel, [
             vscode.Uri.file(assetInfo.voiceCacheDir)
         ]);
@@ -156,9 +156,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
             webviewPanel.webview.postMessage(message);
         }
 
-        let dataPromise = StoryEditorProvider.generateData(assetInfo);
+        const dataPromise = StoryEditorProvider.generateData(assetInfo);
         let prevEditPromise: Promise<any> = Promise.resolve();
-        let loadVoicePromise: Promise<{[key: string]: string}> | undefined;
+        let loadVoicePromise: Promise<{ [key: string]: string }> | undefined;
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             let data: InitData;
             try {
@@ -190,14 +190,14 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                         });
                         postMessage({ type: "setNodes", nodes: data.nodes });
                         if (data.title) {
-                            postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Story: {0}", {0: data.title}) });
+                            postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Story: {0}", { 0: data.title }) });
                         }
                     });
                     fontHelper.onInit(webviewPanel.webview);
                     break;
-                
+
                 case "getTextSlotContent": {
-                    let key = message.entryPath[0];
+                    const key = message.entryPath[0];
                     postMessage({
                         type: "setTextSlotContent",
                         entryPath: message.entryPath,
@@ -206,9 +206,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     });
                     break;
                 }
-                
+
                 case "getExists": {
-                    let key = message.path[0];
+                    const key = message.path[0];
                     postMessage({
                         type: "setExists",
                         path: message.path,
@@ -220,14 +220,14 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
                 case "setTextSlotContent": {
                     prevEditPromise = prevEditPromise.then(async () => {
-                        let key = message.entryPath[0];
+                        const key = message.entryPath[0];
                         if (key === "title") {
                             await applyEdit(makeEditForStringProperty("title", message.content));
                             return;
                         }
 
-                        let blockIndex = +key;
-                        let ranges = data.contentRanges[blockIndex];
+                        const blockIndex = +key;
+                        const ranges = data.contentRanges[blockIndex];
                         if (!ranges) { return; }
 
                         if (json.ast.type !== "Object") { return; }
@@ -245,16 +245,16 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                         textBlockList = json.astObjectsProps.get(json.ast)!.text_block_list.value as jsonToAst.ArrayNode;
 
                         let textBlockEdit: JsonObjectEdit<TextBlockDict> | undefined;
-                        let index = message.index;
+                        const index = message.index;
                         if (index === 0 || index === 1) {
                             textBlockEdit = makeEditForStringProperty(index === 0 ? "name" : "text", message.content);
                         }
                         else {
-                            let isChoiceData = ranges.choiceDataList.contains(index);
+                            const isChoiceData = ranges.choiceDataList.contains(index);
                             if (isChoiceData || ranges.colorTextInfoList.contains(index)) {
                                 const textBlock = textBlockList.children[blockIndex];
                                 if (!textBlock || textBlock.type !== "Object") {
-                                    return vscode.window.showErrorMessage(vscode.l10n.t("Invalid text block dict at index {0}", {0: blockIndex}));
+                                    return vscode.window.showErrorMessage(vscode.l10n.t("Invalid text block dict at index {0}", { 0: blockIndex }));
                                 }
 
                                 const arrayName = isChoiceData ? "choice_data_list" : "color_text_info_list";
@@ -265,7 +265,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                                 let listEdit: JsonEdit<string[]>;
                                 if (!array || array.type !== "Array") {
                                     if (message.content !== null) {
-                                        let values = new Array<string>(listIndex + 1).fill("");
+                                        const values = new Array<string>(listIndex + 1).fill("");
                                         values[listIndex] = message.content;
                                         listEdit = {
                                             type: "array",
@@ -308,38 +308,33 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
                 case "loadVoice":
                     if (!loadVoicePromise || !(await pathExists(assetInfo.voiceCacheDir))) {
-                        loadVoicePromise = new Promise(async (resolve, reject) => {
+                        loadVoicePromise = (async () => {
                             const hash = await assetHelper.getAssetHash(assetInfo.voiceAssetName);
                             if (!hash) {
-                                return reject(new Error(vscode.l10n.t("Voice data is not available for this story")));
+                                throw new Error(vscode.l10n.t("Voice data is not available for this story"));
                             }
                             const awbPath = await assetHelper.ensureAssetDownloaded(hash, true);
-                            vscode.window.withProgress({
+                            return vscode.window.withProgress({
                                 location: vscode.ProgressLocation.Notification,
                                 title: vscode.l10n.t("Decoding audio")
                             }, async progress => {
-                                try {
-                                    const awb = await AFS2.fromFile(awbPath);
-                                    const paths = await awb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
-                                        progress.report({
-                                            message: `${current}/${total}`,
-                                            increment: current ? (1 / total) * 100 : 0
-                                        });
+                                const awb = await AFS2.fromFile(awbPath);
+                                const paths = await awb.decodeToWavFiles(HCA_KEY, assetInfo.voiceCacheDir, (current, total) => {
+                                    progress.report({
+                                        message: `${current}/${total}`,
+                                        increment: current ? (1 / total) * 100 : 0
                                     });
-                                    const uris = Object.fromEntries(data.voiceCues.map(([id, cueId]) => [
-                                        id, webviewPanel.webview.asWebviewUri(vscode.Uri.file(paths[cueId])).toString()
-                                    ]));
-                                    resolve(uris);
-                                }
-                                catch (e) {
-                                    reject(e);
-                                }
+                                });
+                                const uris = Object.fromEntries(data.voiceCues.map(([id, cueId]) => [
+                                    id, webviewPanel.webview.asWebviewUri(vscode.Uri.file(paths[cueId])).toString()
+                                ]));
+                                return uris;
                             });
-                        });
+                        })();
                     }
                     loadVoicePromise
-                    .then(uris => postMessage({ type: "loadVoice", uris }))
-                    .catch(e => vscode.window.showErrorMessage("" + e));
+                        .then(uris => postMessage({ type: "loadVoice", uris }))
+                        .catch(e => vscode.window.showErrorMessage("" + e));
                     break;
             }
         });
@@ -365,7 +360,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         const matches = filename.match(/^(storytimeline_((\d{2})(\d{4})\d{3}))\.json$/) ||
             filename.match(/^(hometimeline_((\d{5})_(\d{2})_\d{7}))\.json$/);
         if (matches) {
-            let timelineType = filename.startsWith("story") ? "story" : "home";
+            const timelineType = filename.startsWith("story") ? "story" : "home";
             isStoryView = timelineType === "story" ? STORY_VIEW_CATEGORIES.has(matches[3]) : false;
             assetBundleName = `${timelineType}/data/${matches[3]}/${matches[4]}/${matches[1]}`;
             assetName = `assets/_gallopresources/bundle/resources/${assetBundleName}.asset`;
@@ -390,7 +385,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
 
         const hash = await assetHelper.getAssetHash(assetBundleName);
         if (!hash) {
-            throw new Error(`Could not find hash for asset bundle: {0}`, {0: assetBundleName});
+            throw new Error(vscode.l10n.t("Could not find hash for asset bundle: {0}", { 0: assetBundleName }));
         }
         const assetPath = await assetHelper.ensureAssetDownloaded(hash, false);
 
@@ -408,7 +403,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         const timelineData = await extractStoryData({
             assetPath: absoluteAssetPath,
             assetName: assetName,
-            useDecryption: useDecryption,
+            useDecryption: useDecryption ?? false,
             metaPath: absoluteMetaPath,
             bundleHash: hash,
             metaKey: metaKey
@@ -435,7 +430,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
         let globalCueOffset = 0;
 
         for (const [i, block] of timelineData.blockList.entries()) {
-            let content: IStoryTextSlot[] = [
+            const content: IStoryTextSlot[] = [
                 {
                     content: block.name,
                     userData: { type: StoryTextSlotType.Name },
@@ -503,7 +498,7 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 if (prevFemaleNode && id >= +prevFemaleNode.next!) {
                     prevFemaleNode.next = id;
                     for (const slot of prevFemaleNode.content) {
-                        if (slot.link) slot.link = id;
+                        if (slot.link) { slot.link = id; }
                     }
                     prevFemaleNode = undefined;
                 }

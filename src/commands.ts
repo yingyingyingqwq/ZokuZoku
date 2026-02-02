@@ -176,7 +176,7 @@ const COMMANDS: CommandTree = {
                 });
             },
             setLocalizedDataDir() {
-                let localizedDataDir = LocalizedDataManager.instance?.dirUri.fsPath;
+                const localizedDataDir = LocalizedDataManager.instance?.dirUri.fsPath;
                 if (!localizedDataDir) {
                     return vscode.window.showErrorMessage(vscode.l10n.t("ZokuZoku has not been activated."));
                 }
@@ -285,7 +285,7 @@ export function registerCommands(
     context: vscode.ExtensionContext, commandTree = COMMANDS, disposables: vscode.Disposable[] = [], prefix = ""
 ): vscode.Disposable[] {
     for (const name in commandTree) {
-        let node = commandTree[name];
+        const node = commandTree[name];
         if (typeof node === "function") {
             disposables.push(vscode.commands.registerCommand(prefix + name, node));
         }

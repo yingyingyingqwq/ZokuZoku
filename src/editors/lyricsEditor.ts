@@ -21,7 +21,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
 
     resolveCustomTextEditor(document: vscode.TextDocument, webviewPanel: vscode.WebviewPanel, _token: vscode.CancellationToken) {
         // Json document setup
-        let json = new JsonDocument<{[key: string]: string} | null>(document.uri, null, () => {
+        const json = new JsonDocument<{[key: string]: string} | null>(document.uri, null, () => {
             const subscribedKey = this.subscribedPath[0];
             const content = getDictValue(subscribedKey);
             postMessage({
@@ -38,7 +38,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         });
         this.disposables.push(json);
 
-        let initReadPromise = json.readTextDocument().catch(_ => {});
+        const initReadPromise = json.readTextDocument().catch(_ => {});
         json.watchTextDocument(document);
         function getDictProperty(id: TreeNodeId): jsonToAst.PropertyNode | undefined {
             if (json.ast.type !== "Object" || typeof id !== "string") { return; }
@@ -60,7 +60,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
         }
 
         let prevEditPromise = Promise.resolve();
-        let nodesPromise = LyricsEditorProvider.generateNodes(document.uri);
+        const nodesPromise = LyricsEditorProvider.generateNodes(document.uri);
         webviewPanel.webview.onDidReceiveMessage((message: EditorMessage) => {
             switch (message.type) {
                 case "init":
@@ -79,7 +79,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
                     break;
                 
                 case "getTextSlotContent": {
-                    let key = message.entryPath[0];
+                    const key = message.entryPath[0];
                     postMessage({
                         type: "setTextSlotContent",
                         entryPath: message.entryPath,
@@ -90,7 +90,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
                 }
                 
                 case "getExists": {
-                    let key = message.path[0];
+                    const key = message.path[0];
                     postMessage({
                         type: "setExists",
                         path: message.path,
@@ -100,7 +100,7 @@ export class LyricsEditorProvider extends EditorBase implements vscode.CustomTex
                 }
 
                 case "setTextSlotContent": {
-                    let key = message.entryPath[0];
+                    const key = message.entryPath[0];
                     if (typeof key !== "string") { break; }
 
                     // Wait for previous edit to finish before applying another

@@ -53,7 +53,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         const tableName = this.getTableName(document.uri);
         
         // Json document setup
-        let json = new JsonDocument<{[key: string]: string | {[key: string]: string}} | null>(document.uri, null, () => {
+        const json = new JsonDocument<{[key: string]: string | {[key: string]: string}} | null>(document.uri, null, () => {
             const content = getDictValue(this.subscribedPath);
             postMessage({
                 type: "setTextSlotContent",
@@ -69,14 +69,14 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         });
         this.disposables.push(json);
 
-        let initReadPromise = json.readTextDocument().catch(_ => {});
+        const initReadPromise = json.readTextDocument().catch(_ => {});
         json.watchTextDocument(document);
         function getDictProperty(path: TreeNodeId[]): jsonToAst.PropertyNode | undefined {
             if (json.ast.type !== "Object" || !path.length) { return; }
             let currentObject = json.ast;
             for (let i = 0; i < path.length - 1; ++i) {
                 const id = path[i];
-                let valueNode = json.astObjectsProps.get(currentObject)?.[id]?.value;
+                const valueNode = json.astObjectsProps.get(currentObject)?.[id]?.value;
                 if (valueNode?.type !== "Object") { return; }
                 currentObject = valueNode;
             }
@@ -99,7 +99,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
         }
 
         let prevEditPromise = Promise.resolve();
-        let dataPromise = MdbEditorProvider.generateData(tableName);
+        const dataPromise = MdbEditorProvider.generateData(tableName);
         webviewPanel.webview.onDidReceiveMessage(async (message: EditorMessage) => {
             let data: InitData;
             try {
@@ -194,7 +194,7 @@ export class MdbEditorProvider extends EditorBase implements vscode.CustomTextEd
                         }
 
                         try {
-                            let applied = await editPromise;
+                            const applied = await editPromise;
                             if (!applied) {
                                 vscode.window.showErrorMessage(vscode.l10n.t('Failed to apply edit'));
                             }

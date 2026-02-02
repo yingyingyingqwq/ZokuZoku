@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import os from 'os';
 import path from 'path';
 import fs from 'fs/promises';
-import tar from 'tar';
+import * as tar from 'tar';
 import { spawn } from "child_process";
 
 import downloader from './core/downloader';
@@ -39,7 +39,7 @@ async function installPymport() {
     const downloadPath = path.join(ZOKUZOKU_DIR, "tmp.tar.gz");
     await downloader.downloadToFile(
         downloadUrl,
-        vscode.l10n.t('Downloading pymport {0}', {0: PYMPORT_VER}
+        vscode.l10n.t('Downloading pymport {0}', { 0: PYMPORT_VER }
         ),
         downloadPath,
         true
@@ -109,13 +109,13 @@ async function installUnityPy() {
             pip.on("error", e => {
                 reject(e);
             })
-            .on("exit", code => {
-                if (code === 0) {
-                    resolve();
-                    return;
-                }
-                reject(new Error(vscode.l10n.t('Python pip process exited with code {0}', {0: code})));
-            });
+                .on("exit", code => {
+                    if (code === 0) {
+                        resolve();
+                        return;
+                    }
+                    reject(new Error(vscode.l10n.t('Python pip process exited with code {0}', { 0: code })));
+                });
         });
     });
 
@@ -124,7 +124,7 @@ async function installUnityPy() {
     }
 }
 
-const GAME_DATA_FILES = [ "meta", path.join("master", "master.mdb") ];
+const GAME_DATA_FILES = ["meta", path.join("master", "master.mdb")];
 
 async function checkGameDataDir() {
     if (config().get("gameDataDir")) { return; }
@@ -163,7 +163,7 @@ async function checkGameDataDir() {
 
     if (foundGameDataDirs.length === 1) {
         const gameDataDir = foundGameDataDirs[0];
-        const res = await vscode.window.showWarningMessage(vscode.l10n.t('The game data directory has not been set. Would you like to set it to "{0}"?', {0: gameDataDir}),
+        const res = await vscode.window.showWarningMessage(vscode.l10n.t('The game data directory has not been set. Would you like to set it to "{0}"?', { 0: gameDataDir }),
             YES, NO);
         if (res === YES) {
             await config().update("gameDataDir", gameDataDir, true);
@@ -174,7 +174,7 @@ async function checkGameDataDir() {
     }
 
     if (foundGameDataDirs.length > 1) {
-        const selectedDir = await vscode.window.showQuickPick(foundGameDataDirs, { 
+        const selectedDir = await vscode.window.showQuickPick(foundGameDataDirs, {
             placeHolder: vscode.l10n.t("Multiple game data directories found. Please select which one to use."),
             ignoreFocusOut: true
         });
@@ -198,7 +198,7 @@ async function checkLocalizeDictDump() {
             await fs.stat(potentialPath);
             foundDumpPaths.push(potentialPath);
         }
-        catch {}
+        catch { }
     }
 
     if (foundDumpPaths.length === 0) {
@@ -207,7 +207,7 @@ async function checkLocalizeDictDump() {
 
     if (foundDumpPaths.length === 1) {
         const dumpPath = foundDumpPaths[0];
-        const res = await vscode.window.showWarningMessage(vscode.l10n.t('The localize dict dump path has not been set. Would you like to set it to "{0}"?', {0: dumpPath}), YES, NO);
+        const res = await vscode.window.showWarningMessage(vscode.l10n.t('The localize dict dump path has not been set. Would you like to set it to "{0}"?', { 0: dumpPath }), YES, NO);
         if (res === YES) {
             await config().update("localizeDictDump", dumpPath, true);
         } else {
@@ -236,7 +236,7 @@ async function checkLocalizeDictDump() {
 
 async function checkEnabled() {
     const { setActive } = await import("./core/index.js");
-    let enabled = config().inspect<boolean>("enabled")?.workspaceValue;
+    const enabled = config().inspect<boolean>("enabled")?.workspaceValue;
     if (typeof enabled === "boolean") {
         setActive(enabled);
     }
@@ -246,12 +246,12 @@ async function checkEnabled() {
             vscode.l10n.t('Would you like to enable ZokuZoku for this workspace?'),
             YES, NO
         )
-        .then(res => {
-            if (res === YES) {
-                config().update("enabled", true, false);
-                setActive(true);
-            }
-        });
+            .then(res => {
+                if (res === YES) {
+                    config().update("enabled", true, false);
+                    setActive(true);
+                }
+            });
     }
 }
 
@@ -314,14 +314,14 @@ async function runInitialSetup(context: vscode.ExtensionContext) {
         if (!pyInstalled) { await installPymport(); }
         if (!unityPyInstalled || !apswInstalled) { await installUnityPy(); }
         vscode.window.showInformationMessage(
-                vscode.l10n.t('ZokuZoku\'s dependencies have been installed to "{0}"', {0: ZOKUZOKU_DIR})
-            );
+            vscode.l10n.t('ZokuZoku\'s dependencies have been installed to "{0}"', { 0: ZOKUZOKU_DIR })
+        );
     }
 
     await checkGameDataDir();
     await checkLocalizeDictDump();
 
-    const { default: SQLite } = await import('./sqlite');
+    const { default: SQLite } = await import('./sqlite/index.js');
     SQLite.init(context.extensionPath);
 
     setReady();
@@ -345,7 +345,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration(CONFIG_SECTION)) {
-            const { default: SQLite } = await import('./sqlite');
+            const { default: SQLite } = await import('./sqlite/index.js');
             SQLite.init(context.extensionPath);
             checkEnabled();
         }
@@ -365,4 +365,4 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 }
 
-export function deactivate() {}
+export function deactivate() { }

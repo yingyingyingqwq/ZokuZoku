@@ -1,9 +1,7 @@
 {
-  "extension.displayName": "ZokuZoku",
+  "extension.displayName": "ZokuZoku Edge",
   "extension.description": "Hachimi translation tool",
-
-  "activitybar.zokuzoku.title": "ZokuZoku",
-
+  "activitybar.zokuzoku.title": "ZokuZoku Edge",
   "view.inactive.name": "Inactive",
   "view.stories.name": "All stories",
   "view.homeStories.name": "Home dialogues",
@@ -12,11 +10,9 @@
   "view.mdb.name": "MDB",
   "view.lyrics.name": "Lyrics",
   "view.hachimiControls.name": "Hachimi Controls",
-
   "welcome.inactive": "ZokuZoku has not been enabled for this workspace.\n[Enable](command:zokuzoku.enable)",
   "welcome.localizeDict": "[Open editor](command:zokuzoku.openLocalizeDictEditor)",
   "welcome.hachimiControls": "[Reload localized data](command:zokuzoku.hachimi.reloadLocalizedData)\n[Set translation folder](command:zokuzoku.hachimi.setLocalizedDataDir)\n[Revert translation folder](command:zokuzoku.hachimi.revertLocalizedDataDir)",
-
   "command.enable.title": "ZokuZoku: Enable",
   "command.openLocalizeDictEditor.title": "ZokuZoku: Open localize dict editor",
   "command.openLyricsEditor.title": "ZokuZoku: Open lyrics editor",
@@ -33,13 +29,11 @@
   "command.homeStories.refresh.title": "ZokuZoku: Refresh Home Dialogues view",
   "command.mainStories.refresh.title": "ZokuZoku: Refresh Main Stories view",
   "command.lyrics.refresh.title": "ZokuZoku: Refresh Lyrics view",
-
   "customEditor.localizeDict.displayName": "Localize Dict Editor",
   "customEditor.lyrics.displayName": "Lyrics Editor",
   "customEditor.mdb.displayName": "MDB Editor",
   "customEditor.raceStory.displayName": "Race Story Editor",
   "customEditor.story.displayName": "Story Editor",
-
   "config.enabled.description": "Must be enabled per workspace. User settings value is ignored.",
   "config.gameDataDir.description": "Path to the game's data directory. Usually located at C:\\Users\\[YOURUSERNAME]\\AppData\\LocalLow\\Cygames\\umamusume. Only the 'meta' file and the 'master' folder is required to be present in this directory, so if you don't want ZokuZoku to mess with the game's data dir, you can symlink them to a different folder and use that as the data directory instead.",
   "config.localizeDictDump.description": "Path to a localize_dump.json file. You can dump the localize dict by launching the game, open the Hachimi menu and enable Translator mode in the config editor (if you haven't already), then under the Translation section, select the 'Dump localize dict' option. The dumped file will be saved in the 'hachimi' folder inside the game's install directory. You should do this every time the game updates to populate it with new data!",

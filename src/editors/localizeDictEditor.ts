@@ -33,7 +33,7 @@ export class LocalizeDictEditorProvider
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ) {
-        let json = new JsonDocument<{ [key: string]: string } | null>(
+        const json = new JsonDocument<{ [key: string]: string } | null>(
             document.uri,
             null,
             () => {
@@ -54,7 +54,7 @@ export class LocalizeDictEditorProvider
         );
         this.disposables.push(json);
 
-        let initReadPromise = json.readTextDocument().catch(() => {});
+        const initReadPromise = json.readTextDocument().catch(() => {});
         json.watchTextDocument(document);
 
         function getDictProperty(
@@ -82,7 +82,7 @@ export class LocalizeDictEditorProvider
         }
 
         let prevEditPromise: Promise<void> = Promise.resolve();
-        let nodesPromise = LocalizeDictEditorProvider.generateNodes();
+        const nodesPromise = LocalizeDictEditorProvider.generateNodes();
 
         webviewPanel.webview.onDidReceiveMessage(
             (message: EditorMessage) => {
@@ -109,7 +109,7 @@ export class LocalizeDictEditorProvider
                     }
 
                     case 'getTextSlotContent': {
-                        let [_, key] = message.entryPath;
+                        const [_, key] = message.entryPath;
                         postMessage({
                             type: 'setTextSlotContent',
                             entryPath: message.entryPath,
@@ -120,7 +120,7 @@ export class LocalizeDictEditorProvider
                     }
 
                     case 'getExists': {
-                        let [_, key] = message.path;
+                        const [_, key] = message.path;
                         postMessage({
                             type: 'setExists',
                             path: message.path,
@@ -130,7 +130,7 @@ export class LocalizeDictEditorProvider
                     }
 
                     case 'setTextSlotContent': {
-                        let [_, key] = message.entryPath;
+                        const [_, key] = message.entryPath;
                         if (typeof key !== 'string') {
                             break;
                         }
@@ -161,18 +161,18 @@ export class LocalizeDictEditorProvider
         }
 
     static async generateNodes(): Promise<ITreeNode[]> {
-        let dumpPath = config().get<string>('localizeDictDump');
+        const dumpPath = config().get<string>('localizeDictDump');
         if (!dumpPath) {
             throw new Error(
                 vscode.l10n.t('The path to the localize dict dump has not been set')
             );
         }
 
-        let dumpJson = await fs.readFile(dumpPath, { encoding: 'utf8' });
-        let dict: { [key: string]: string } = JSON.parse(dumpJson);
+        const dumpJson = await fs.readFile(dumpPath, { encoding: 'utf8' });
+        const dict: { [key: string]: string } = JSON.parse(dumpJson);
 
-        let nodes: ITreeNode[] = [];
-        let categoryMap: {[key: string]: IEntryTreeNode[]} = {};
+        const nodes: ITreeNode[] = [];
+        const categoryMap: {[key: string]: IEntryTreeNode[]} = {};
 
         for (const key in dict) {
             const value = dict[key];
@@ -196,7 +196,7 @@ export class LocalizeDictEditorProvider
             let prev: TreeNodeId | undefined;
             if (!categoryChildren) {
                 categoryChildren = [];
-                let node: ITreeNode = {
+                const node: ITreeNode = {
                     type: 'category',
                     id: categoryName,
                     name: categoryName,

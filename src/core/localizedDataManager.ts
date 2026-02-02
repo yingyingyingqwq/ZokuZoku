@@ -56,12 +56,12 @@ export class LocalizedDataManager {
     configJson: JsonDocument<LocalizedDataConfig>;
 
     private constructor() {
-        let folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        const folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
         if (!folderUri) {
             throw new Error(vscode.l10n.t('No workspace folder.'));
         }
         this.dirUri = vscode.Uri.joinPath(folderUri, "localized_data");
-        let configUri = vscode.Uri.joinPath(this.dirUri, "config.json");
+        const configUri = vscode.Uri.joinPath(this.dirUri, "config.json");
         this.configJson = new JsonDocument(
             configUri, DEFAULT_CONFIG, () => this.config = this.configJson.getValue()
         );
@@ -107,7 +107,7 @@ export class LocalizedDataManager {
     }
 
     static async with(callback: (ldManager: LocalizedDataManager) => any) {
-        let ldManager = LocalizedDataManager.instance;
+        const ldManager = LocalizedDataManager.instance;
         if (!ldManager) {
             vscode.window.showErrorMessage(vscode.l10n.t('ZokuZoku is inactive.'));
             return;
@@ -159,13 +159,13 @@ export class LocalizedDataManager {
     async getPathUriAndOpenTextDocument<K extends keyof LocalizedDataConfig>(
         defaultFileContent: string, key: K, defaultValue: LocalizedDataConfig[K] & string, ...pathSegments: string[]
     ): Promise<vscode.TextDocument> {
-        let parentUri = await this.getPathUri(key, defaultValue, ...pathSegments.slice(0, -1));
+        const parentUri = await this.getPathUri(key, defaultValue, ...pathSegments.slice(0, -1));
         // if there are no path segments, that means it's in localized_data which is guaranteed to exist at this point
         if (pathSegments.length > 0) {
             await vscode.workspace.fs.createDirectory(parentUri);
         }
 
-        let uri = vscode.Uri.joinPath(parentUri, ...pathSegments.slice(-1));
+        const uri = vscode.Uri.joinPath(parentUri, ...pathSegments.slice(-1));
         let document: vscode.TextDocument;
         try {
             // Yes, stat AND read the document. Documents that were deleted while
