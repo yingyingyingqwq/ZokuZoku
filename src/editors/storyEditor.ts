@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { getEditorHtml, makeEditForArray, makeEditForStringProperty } from './utils';
 import { StoryEditorControllerMessage, EditorMessage, IEntryTreeNode, IStoryTextSlot, ITreeNode, StoryTextSlotType, TreeNodeId } from './sharedTypes';
 import { JsonArrayEdit, JsonDocument, JsonEdit, JsonObjectEdit, LocalizedDataManager } from '../core';
+import { createFormatter } from '../core/jsonFormatter';
 import assetHelper from '../core/assetHelper';
 import fontHelper from './fontHelper';
 import { EditorBase } from './editorBase';
@@ -68,7 +69,23 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     exists
                 });
             }
-        });
+        }, createFormatter({
+            keyOrder: [
+                "title",
+                "no_wrap",
+                "text_block_list",
+                "name",
+                "text",
+                "choice_data_list",
+                "color_text_info_list",
+                "voice_id",
+                "voice_length"
+            ],
+            compact: (_value) => {
+                // Never compact any objects - always expand for readability
+                return false;
+            }
+        }));
         this.disposables.push(json);
 
         const initReadPromise = json.readTextDocument().catch(_ => { });
@@ -171,6 +188,9 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                 case "init":
                     postMessage({ type: "setExplorerTitle", title: vscode.l10n.t("Story") });
                     initReadPromise.finally(async () => {
+                        if (!json.isReadSuccessful) {
+                            vscode.window.showErrorMessage(vscode.l10n.t("Failed to read the document. Editing may cause data loss."));
+                        }
                         let noWrap = false;
                         if (json.ast.type === "Object") {
                             const noWrapValue = json.astObjectsProps.get(json.ast)?.no_wrap?.value;
@@ -335,6 +355,17 @@ export class StoryEditorProvider extends EditorBase implements vscode.CustomText
                     loadVoicePromise
                         .then(uris => postMessage({ type: "loadVoice", uris }))
                         .catch(e => vscode.window.showErrorMessage("" + e));
+                    break;
+                
+                case "setNoWrap":
+                    applyEdit({
+                        type: "object",
+                        action: "update",
+                        property: {
+                            key: "no_wrap",
+                            value: message.value
+                        }
+                    });
                     break;
             }
         });

@@ -174,15 +174,21 @@ export class LocalizedDataManager {
             document = await vscode.workspace.openTextDocument(uri);
         }
         catch {
-            const untitledUri = uri.with({ scheme: "untitled" });
-            document = await vscode.workspace.openTextDocument(untitledUri);
-            const edit = new vscode.WorkspaceEdit();
-            edit.insert(untitledUri, new vscode.Position(0, 0), defaultFileContent);
-            await vscode.workspace.applyEdit(edit);
-            // Workaround, without this the custom editor wouldn't load sometimes due to
-            // the lack of a content provider(?) caused by a race condition.
-            // The default text editor would open itself regardless. Annoying.
-            await vscode.window.showTextDocument(document);
+            try {
+                await vscode.workspace.fs.writeFile(uri, Buffer.from(defaultFileContent));
+                document = await vscode.workspace.openTextDocument(uri);
+            }
+            catch (e) {
+                const untitledUri = uri.with({ scheme: "untitled" });
+                document = await vscode.workspace.openTextDocument(untitledUri);
+                const edit = new vscode.WorkspaceEdit();
+                edit.insert(untitledUri, new vscode.Position(0, 0), defaultFileContent);
+                await vscode.workspace.applyEdit(edit);
+                // Workaround, without this the custom editor wouldn't load sometimes due to
+                // the lack of a content provider(?) caused by a race condition.
+                // The default text editor would open itself regardless. Annoying.
+                await vscode.window.showTextDocument(document);
+            }
         }
 
         return document;

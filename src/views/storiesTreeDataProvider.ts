@@ -194,12 +194,12 @@ export default class StoriesTreeDataProvider extends RefreshableTreeDataProvider
 
                         const dictPath = await ldManager.getPathUri("assets_dir", undefined,
                             "story", "data", categoryId, groupId, `storytimeline_${storyId}.json`);
-                        const dictExists = dictPath !== undefined && await utils.uriExists(dictPath);
+                        const hasContent = await utils.hasTranslatedContent(dictPath);
 
                         items.push({
                             id: itemId,
                             tooltip: itemId,
-                            label: utils.makeActiveStatusLabel(label, dictExists),
+                            label: utils.makeActiveStatusLabel(label, hasContent),
                             command: {
                                 title: "ZokuZoku: Open story editor",
                                 command: "zokuzoku.openStoryEditor",

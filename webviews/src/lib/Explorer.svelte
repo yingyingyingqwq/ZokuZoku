@@ -237,6 +237,8 @@
         }
     }
 
+    export let extraActions: IPanelAction[] = [];
+    
     let actions: IPanelAction[];
     $: actions = [
         {
@@ -341,7 +343,8 @@
             icon: hideExists ? "eye" : "eye-closed",
             tooltip: hideExists ? l10n.t("Show translated entries") : l10n.t("Hide translated entries"),
             onClick: () => hideExists = !hideExists
-        }
+        },
+        ...extraActions
     ];
 </script>
 

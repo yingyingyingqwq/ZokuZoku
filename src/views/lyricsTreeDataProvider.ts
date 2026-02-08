@@ -51,10 +51,10 @@ export default class LyricsTreeDataProvider extends RefreshableTreeDataProviderB
             const index = path.slice(-11, -7);
 
             const dictPath = await ldManager.getPathUri("assets_dir", undefined, "lyrics", `m${index}_lyrics.json`);
-            const dictExists = dictPath !== undefined && await utils.uriExists(dictPath);
+            const hasContent = await utils.hasTranslatedContent(dictPath);
 
             // Try to get the name of the song, otherwise use the index as the label
-            const label = utils.makeActiveStatusLabel(songNames[+index] ?? index, dictExists);
+            const label = utils.makeActiveStatusLabel(songNames[+index] ?? index, hasContent);
 
             items.push({
                 id: index,

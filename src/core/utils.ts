@@ -95,6 +95,36 @@ export async function pathExists(path: PathLike): Promise<boolean> {
     }
 }
 
+/**
+ * Check if a story timeline file has translated content.
+ * Returns true if the file exists and has at least one non-empty text field.
+ */
+export async function hasTranslatedContent(uri: vscode.Uri | undefined): Promise<boolean> {
+    if (!uri || !await uriExists(uri)) {
+        return false;
+    }
+
+    try {
+        const data = await vscode.workspace.fs.readFile(uri);
+        const content = Buffer.from(data).toString('utf8');
+        const json = JSON.parse(content);
+
+        // Check if there's a text_block_list with at least one non-empty text field
+        if (json.text_block_list && Array.isArray(json.text_block_list)) {
+            for (const block of json.text_block_list) {
+                if (block.text && typeof block.text === 'string' && block.text.trim().length > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    } catch (e) {
+        // If we can't read or parse the file, assume no content
+        return false;
+    }
+}
+
 export function makeActiveStatusLabel(label: string, active: boolean) {
     if (active) {
         return "[✔] " + label;

@@ -171,7 +171,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
 
                             default: continue;
                         }
-                        const dictExists = dictPath !== undefined && await utils.uriExists(dictPath);
+                        const hasContent = await utils.hasTranslatedContent(dictPath);
 
                         noTranslatables = false;
 
@@ -179,7 +179,7 @@ export default class MainStoriesTreeDataProvider extends RefreshableTreeDataProv
                         items.push({
                             id: itemId,
                             tooltip: itemId,
-                            label: utils.makeActiveStatusLabel(`Part ${(i / 2) + 1}`, dictExists),
+                            label: utils.makeActiveStatusLabel(`Part ${(i / 2) + 1}`, hasContent),
                             iconPath: new vscode.ThemeIcon(iconId),
                             command
                         });
