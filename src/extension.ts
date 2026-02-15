@@ -20,7 +20,6 @@ import { initPythonBridge, getUnityPyVersion, checkApsw } from './pythonBridge';
 // Any other module from this package must be imported dynamically,
 // after pymport bindings have been downloaded.
 
-let coreComponentsDisposable: vscode.Disposable | undefined;
 
 async function checkPymport(): Promise<boolean> {
     try {
@@ -255,47 +254,6 @@ async function checkEnabled() {
     }
 }
 
-async function activateCore(context: vscode.ExtensionContext) {
-    if (coreComponentsDisposable) {
-        coreComponentsDisposable.dispose();
-    }
-
-    const { registerCommands } = await import("./commands.js");
-    const { registerEditors } = await import("./editors/index.js");
-    const { registerViews } = await import("./views/index.js");
-
-    const disposables = [
-        ...registerCommands(context),
-        ...registerEditors(context),
-        ...registerViews(context)
-    ];
-
-    coreComponentsDisposable = vscode.Disposable.from(...disposables);
-    context.subscriptions.push(coreComponentsDisposable);
-
-    await checkEnabled();
-}
-
-async function checkAndActivateCore(context: vscode.ExtensionContext) {
-    const gameDataDir = config().get<string>("gameDataDir");
-    const localizeDump = config().get<string>("localizeDictDump");
-
-    if (gameDataDir && localizeDump) {
-        await activateCore(context);
-    }
-}
-
-async function registerCoreComponents(context: vscode.ExtensionContext) {
-    const { registerCommands } = await import("./commands.js");
-    const { registerEditors } = await import("./editors/index.js");
-    const { registerViews } = await import("./views/index.js");
-
-    context.subscriptions.push(
-        ...registerCommands(context),
-        ...registerEditors(context),
-        ...registerViews(context)
-    );
-}
 
 async function runInitialSetup(context: vscode.ExtensionContext) {
     initPythonBridge();
@@ -353,7 +311,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
     try {
         await runInitialSetup(context);
-        await registerCoreComponents(context);
+        await runInitialSetup(context);
+        
+        const { registerCommands } = await import("./commands.js");
+        const { registerEditors } = await import("./editors/index.js");
+        const { registerViews } = await import("./views/index.js");
+
+        context.subscriptions.push(
+            ...registerCommands(context),
+            ...registerEditors(context),
+            ...registerViews(context)
+        );
     } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         vscode.window.showErrorMessage(`ZokuZoku setup failed: ${message}`, "Retry Setup")

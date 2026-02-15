@@ -7,6 +7,7 @@ export const PYMPORT_INSTALLED_FILE = path.join(PYMPORT_DIR, ".installed");
 export const PYMPORT_VER = "v1.6.0-rc.2";
 export const UNITYPY_VER = "1.10.18";
 export const APSW_VER = "3.50.4.0";
+export const SQLITE_WIN32_VER = "sqlite-v3.26.0-win32-x86.exe";
 
 export const HCA_KEY = 75923756697503n;
 

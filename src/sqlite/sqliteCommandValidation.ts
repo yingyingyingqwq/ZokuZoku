@@ -2,6 +2,7 @@ import { spawnSync } from 'child_process';
 import { platform } from 'os';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { SQLITE_WIN32_VER } from '../defines';
 
 /**
  * Validate the sqlite3 command/path passed as argument, if not valid fallback to the binary in the bin directory.
@@ -63,10 +64,9 @@ export function getSqliteBinariesPath(extensionPath: string): string {
     // const os_arch = arch();
     let sqliteBin: string;
 
-    // TODO: move sqlite version number to package.json and import it from there
     switch (plat) {
         case 'win32':
-            sqliteBin = 'sqlite-v3.26.0-win32-x86.exe';
+            sqliteBin = SQLITE_WIN32_VER;
             break;
         default:
             console.log(`Fallback binary not found: system OS not recognized.`);
